@@ -221,6 +221,23 @@
             font-size: 0.9rem;
         }
 
+        .video-container {
+            width: 100%;
+            margin-bottom: 18px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid #283548;
+            display: none;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            max-height: 480px;
+            object-fit: contain;
+        }
+
         .prompt-quote {
             font-style: italic;
             color: #e2e8f0;
@@ -236,6 +253,10 @@
             background-color: #1e293b;
             border: 1px solid #334155;
             color: #f8fafc;
+            text-decoration: none;
+            display: inline-block;
+            box-sizing: border-box;
+            text-align: center;
         }
 
         .btn-secondary:hover {
@@ -278,16 +299,21 @@
                 <strong id="renderStatusText" style="color: #f59e0b;">Your video is rendering...</strong>
             </div>
 
-            <div class="video-placeholder">
+            <!-- Live Video Player Container -->
+            <div id="videoContainer" class="video-container">
+                <video id="resultVideo" controls autoplay loop></video>
+            </div>
+
+            <div id="placeholderBox" class="video-placeholder">
                 <div id="previewIcon" style="font-size: 2rem;">🎬</div>
                 <h3 id="previewTitle" style="margin: 8px 0 4px; font-size: 1.05rem;">Processing Scene</h3>
                 <p id="previewSubtitle">Preparing high-definition frames on cloud render node...</p>
                 <div id="renderedPromptDisplay" class="prompt-quote"></div>
             </div>
 
-            <button id="downloadBtn" class="btn-secondary" style="display: none;" onclick="alert('Render job completed on server! Connect your MP4 storage bucket URL here to trigger file download.')">
+            <a id="downloadBtn" class="btn-secondary" style="display: none;" target="_blank">
                 Download Video (.MP4)
-            </button>
+            </a>
         </div>
     </div>
 
@@ -376,11 +402,19 @@
             const previewTitle = document.getElementById("previewTitle");
             const previewSubtitle = document.getElementById("previewSubtitle");
             const downloadBtn = document.getElementById("downloadBtn");
+            const videoContainer = document.getElementById("videoContainer");
+            const placeholderBox = document.getElementById("placeholderBox");
+            const resultVideo = document.getElementById("resultVideo");
 
             previewCard.style.display = "block";
             renderSpinner.style.display = "block";
             renderStatusText.style.color = "#f59e0b";
             renderStatusText.innerText = "Your video is rendering...";
+            
+            // Reset views during render
+            videoContainer.style.display = "none";
+            resultVideo.src = "";
+            placeholderBox.style.display = "block";
             previewIcon.innerText = "🎬";
             previewTitle.innerText = "Generating Your Video";
             previewSubtitle.innerText = "Sending prompt to secure render queue...";
@@ -406,10 +440,21 @@
                     renderSpinner.style.display = "none";
                     renderStatusText.style.color = "#34d399";
                     renderStatusText.innerText = "✓ Render Complete";
-                    previewIcon.innerText = "✨";
-                    previewTitle.innerText = "Your Video is Ready";
-                    previewSubtitle.innerText = "Processed successfully on your VIP render node.";
-                    downloadBtn.style.display = "block";
+                    
+                    if (data.video_url) {
+                        // Hide placeholder and show live HTML5 video player
+                        placeholderBox.style.display = "none";
+                        resultVideo.src = data.video_url;
+                        videoContainer.style.display = "block";
+
+                        // Configure download button
+                        downloadBtn.href = data.video_url;
+                        downloadBtn.style.display = "block";
+                    } else {
+                        previewTitle.innerText = "Your Video is Ready";
+                        previewSubtitle.innerText = "Processed successfully on your VIP render node.";
+                        downloadBtn.style.display = "block";
+                    }
                 } else {
                     previewCard.style.display = "none";
                     renderError.innerText = data.detail || "Unable to complete render request.";
