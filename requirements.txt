@@ -1,5 +1,5 @@
 fastapi
 uvicorn
-pyjwt
-python-dotenv
+PyJWT
 requests
+fal-client
