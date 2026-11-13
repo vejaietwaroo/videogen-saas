@@ -5,8 +5,9 @@ import jwt
 import hmac
 import hashlib
 import os
+import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="2.0.0")
+app = FastAPI(title="VideoGen SaaS API", version="2.1.0")
 
 # Serve frontend dashboard directly
 @app.get("/", response_class=HTMLResponse)
@@ -38,14 +39,44 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
 
 @app.post("/api/render")
 def secure_render(data: dict, user: dict = Depends(get_current_user)):
+    prompt_text = data.get("prompt")
+    if not prompt_text:
+        raise HTTPException(status_code=400, detail="Prompt is required")
+
+    # Ensure FAL_KEY is available in environment
+    fal_key = os.environ.get("FAL_KEY")
+    if not fal_key:
+        raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
+
     try:
+        # Call Fal.ai Text-to-Video model securely
+        handler = fal_client.submit(
+            "fal-ai/minimax/video-01/text-to-video",
+            arguments={
+                "prompt": prompt_text
+            }
+        )
+        
+        result = handler.get()
+        
+        # Extract the video file URL from Fal.ai response
+        video_url = None
+        if "video" in result and "url" in result["video"]:
+            video_url = result["video"]["url"]
+        elif "output" in result:
+            video_url = result["output"]
+
+        if not video_url:
+            raise HTTPException(status_code=500, detail="Video generated, but media URL could not be retrieved.")
+
         return {
             "status": "success", 
-            "message": "Render job queued and executed successfully for licensed user.",
+            "message": "Video generated successfully via Fal.ai",
+            "video_url": video_url,
             "request_payload": data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Rendering failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
