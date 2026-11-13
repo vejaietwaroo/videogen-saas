@@ -49,14 +49,15 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
 
     try:
+      
         # Call Fal.ai Text-to-Video model securely
         handler = fal_client.submit(
-            "fal-ai/minimax/video-01/text-to-video",
+            "minimax/h3-max/text-to-video",
             arguments={
-                "prompt": prompt_text
+                "prompt": prompt_text,
+                "prompt_expansion_mode": "disabled"
             }
         )
-        
         result = handler.get()
         
         # Extract the video file URL from Fal.ai response
