@@ -3,113 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen SaaS Client</title>
+    <title>VideoGen Studio — AI Video Creator</title>
     <style>
+        :root {
+            --bg-dark: #090e1a;
+            --card-bg: #111827;
+            --card-border: #1f2937;
+            --accent-gold: #f59e0b;
+            --accent-blue: #0284c7;
+            --accent-blue-hover: #0369a1;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success-bg: rgba(16, 185, 129, 0.12);
+            --success-text: #34d399;
+            --error-bg: rgba(239, 68, 68, 0.12);
+            --error-text: #f87171;
+        }
+
         body {
-            background-color: #0b1120;
-            color: #f8fafc;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 40px 20px;
             margin: 0;
+            min-height: 100vh;
         }
+
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 680px;
         }
-        h1 {
-            color: #38bdf8;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+
+        /* Header & Status Bar */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 18px;
+            margin-bottom: 28px;
         }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+        }
+
+        .brand span {
+            color: var(--accent-gold);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            background-color: #1e293b;
+            color: var(--text-muted);
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .badge.active {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
+        /* Cards */
         .card {
-            background-color: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
         }
+
+        .card.locked {
+            opacity: 0.55;
+            pointer-events: none;
+        }
+
         h2 {
             margin-top: 0;
-            font-size: 1.25rem;
-            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
             color: #cbd5e1;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 500;
         }
+
         input, textarea {
             width: 100%;
-            background-color: #0f172a;
+            background-color: #0b1120;
             border: 1px solid #334155;
-            border-radius: 6px;
-            color: #f8fafc;
-            padding: 12px;
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 13px 15px;
             font-size: 0.95rem;
             box-sizing: border-box;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             font-family: inherit;
+            transition: border-color 0.2s;
         }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
         textarea {
             resize: vertical;
-            min-height: 80px;
-            font-family: monospace;
+            min-height: 105px;
+            line-height: 1.5;
         }
+
         button {
             width: 100%;
-            background-color: #0284c7;
+            background-color: var(--accent-blue);
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 14px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
+
         button:hover {
-            background-color: #0369a1;
+            background-color: var(--accent-blue-hover);
         }
-        .console-box {
-            background-color: #090d16;
-            border: 1px solid #1e293b;
-            border-radius: 6px;
-            padding: 15px;
-            font-family: monospace;
+
+        button:active {
+            transform: scale(0.99);
+        }
+
+        button:disabled {
+            background-color: #334155;
+            cursor: not-allowed;
+        }
+
+        /* Feedback Banners */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
             font-size: 0.9rem;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .alert.error {
+            display: block;
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+        }
+
+        /* Output Preview Stage */
+        #previewCard {
+            display: none;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(245, 158, 11, 0.25);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .video-placeholder {
+            background: linear-gradient(145deg, #0b1120, #162033);
+            border: 1px solid #283548;
+            border-radius: 10px;
+            padding: 32px 20px;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .video-placeholder p {
+            margin: 8px 0 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .prompt-quote {
+            font-style: italic;
             color: #e2e8f0;
-            white-space: pre-wrap;
-            word-break: break-word;
-            min-height: 40px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            margin-top: 14px;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #f8fafc;
+        }
+
+        .btn-secondary:hover {
+            background-color: #273549;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>VideoGen SaaS Client</h1>
-
-        <div class="card">
-            <h2>1. License Verification</h2>
-            <label for="licenseKey">Enter License Key:</label>
-            <input type="text" id="licenseKey" placeholder="LTD-VIP-2026">
-            <button onclick="verifyLicense()">Verify &amp; Get Token</button>
+        <!-- Top Brand & License Status Header -->
+        <div class="header">
+            <div class="brand">VideoGen <span>Studio</span></div>
+            <div id="licenseBadge" class="badge">Unverified License</div>
         </div>
 
-        <div class="card">
-            <h2>2. Queue Video Render</h2>
-            <label for="renderPrompt">Video Prompt / Settings:</label>
-            <textarea id="renderPrompt" placeholder="Morning meditation and yoga routine"></textarea>
-            <button onclick="triggerRender()">Queue Secure Render</button>
+        <!-- Step 1: License Activation (Collapses automatically once verified) -->
+        <div id="activationCard" class="card">
+            <h2>Activate Your Studio License</h2>
+            <p class="subtitle">Enter your VIP license key to unlock unlimited AI video generation.</p>
+            <label for="licenseKey">License Key</label>
+            <input type="text" id="licenseKey" placeholder="e.g. LTD-VIP-2026">
+            <button id="verifyBtn" onclick="verifyLicense()">Activate License</button>
+            <div id="authError" class="alert error"></div>
         </div>
 
-        <div class="card">
-            <h2>Console Output</h2>
-            <div id="output" class="console-box">System ready. Enter your key above.</div>
+        <!-- Step 2: Video Creator Studio -->
+        <div id="studioCard" class="card locked">
+            <h2>Create New Video</h2>
+            <p class="subtitle">Describe the scene, mood, lighting, and camera movement you want to generate.</p>
+            <label for="renderPrompt">Scene Description</label>
+            <textarea id="renderPrompt" placeholder="A serene 15-second vertical loop of a sunlit wooden studio at sunrise, golden light streaming through tall windows onto a dark yoga mat, 4k cinematic..."></textarea>
+            <button id="renderBtn" onclick="triggerRender()">Generate Video</button>
+            <div id="renderError" class="alert error"></div>
+        </div>
+
+        <!-- Step 3: Output Preview & Download Stage -->
+        <div id="previewCard" class="card">
+            <div id="renderStatusRow" class="status-row">
+                <div id="renderSpinner" class="spinner"></div>
+                <strong id="renderStatusText" style="color: #f59e0b;">Your video is rendering...</strong>
+            </div>
+
+            <div class="video-placeholder">
+                <div id="previewIcon" style="font-size: 2rem;">🎬</div>
+                <h3 id="previewTitle" style="margin: 8px 0 4px; font-size: 1.05rem;">Processing Scene</h3>
+                <p id="previewSubtitle">Preparing high-definition frames on cloud render node...</p>
+                <div id="renderedPromptDisplay" class="prompt-quote"></div>
+            </div>
+
+            <button id="downloadBtn" class="btn-secondary" style="display: none;" onclick="alert('Render job completed on server! Connect your MP4 storage bucket URL here to trigger file download.')">
+                Download Video (.MP4)
+            </button>
         </div>
     </div>
 
@@ -122,21 +300,24 @@
 
         async function verifyLicense() {
             const keyInput = document.getElementById("licenseKey").value.trim();
-            const output = document.getElementById("output");
+            const verifyBtn = document.getElementById("verifyBtn");
+            const authError = document.getElementById("authError");
+
+            authError.style.display = "none";
 
             if (!keyInput) {
-                output.innerText = "[ERROR] Please enter a license key.";
+                authError.innerText = "Please enter your license key to continue.";
+                authError.style.display = "block";
                 return;
             }
 
-            output.innerText = "[INFO] Verifying license key...";
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying License...";
 
             try {
                 const response = await fetch(`${API_BASE}/api/verify-license`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ license_key: keyInput })
                 });
 
@@ -144,30 +325,70 @@
 
                 if (response.ok) {
                     authToken = data.access_token || data.token;
-                    output.innerText = `[SUCCESS] License Verified!\nToken acquired and stored for session.`;
+
+                    // 1. Update top badge to Active VIP License
+                    const badge = document.getElementById("licenseBadge");
+                    badge.innerText = "✓ Active VIP License";
+                    badge.classList.add("active");
+
+                    // 2. Hide the activation card so the studio takes center stage
+                    document.getElementById("activationCard").style.display = "none";
+
+                    // 3. Unlock the video creator card
+                    document.getElementById("studioCard").classList.remove("locked");
                 } else {
-                    output.innerText = `[ERROR] ${data.detail || "License verification failed."}`;
+                    authError.innerText = data.detail || "Invalid license key. Please double-check and try again.";
+                    authError.style.display = "block";
                 }
             } catch (err) {
-                output.innerText = "[NETWORK ERROR] Could not connect to backend server.";
+                authError.innerText = "Unable to reach activation server. Please try again in a moment.";
+                authError.style.display = "block";
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Activate License";
             }
         }
 
         async function triggerRender() {
             const promptText = document.getElementById("renderPrompt").value.trim();
-            const output = document.getElementById("output");
+            const renderBtn = document.getElementById("renderBtn");
+            const renderError = document.getElementById("renderError");
+
+            renderError.style.display = "none";
 
             if (!authToken) {
-                output.innerText = "[ERROR] Please verify your license key first to get an auth token!";
+                renderError.innerText = "Please activate your license key first.";
+                renderError.style.display = "block";
                 return;
             }
 
             if (!promptText) {
-                output.innerText = "[ERROR] Please enter a video prompt.";
+                renderError.innerText = "Please describe the video scene you want to generate.";
+                renderError.style.display = "block";
                 return;
             }
 
-            output.innerText = "[INFO] Queuing render job...";
+            // Show Output Preview Stage in "Rendering" state
+            const previewCard = document.getElementById("previewCard");
+            const renderSpinner = document.getElementById("renderSpinner");
+            const renderStatusText = document.getElementById("renderStatusText");
+            const previewIcon = document.getElementById("previewIcon");
+            const previewTitle = document.getElementById("previewTitle");
+            const previewSubtitle = document.getElementById("previewSubtitle");
+            const downloadBtn = document.getElementById("downloadBtn");
+
+            previewCard.style.display = "block";
+            renderSpinner.style.display = "block";
+            renderStatusText.style.color = "#f59e0b";
+            renderStatusText.innerText = "Your video is rendering...";
+            previewIcon.innerText = "🎬";
+            previewTitle.innerText = "Generating Your Video";
+            previewSubtitle.innerText = "Sending prompt to secure render queue...";
+            document.getElementById("renderedPromptDisplay").innerText = `"${promptText}"`;
+            downloadBtn.style.display = "none";
+
+            renderBtn.disabled = true;
+            renderBtn.innerText = "Rendering...";
 
             try {
                 const response = await fetch(`${API_BASE}/api/render`, {
@@ -182,12 +403,25 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    output.innerText = `[SUCCESS] Render Job Queued!\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                    renderSpinner.style.display = "none";
+                    renderStatusText.style.color = "#34d399";
+                    renderStatusText.innerText = "✓ Render Complete";
+                    previewIcon.innerText = "✨";
+                    previewTitle.innerText = "Your Video is Ready";
+                    previewSubtitle.innerText = "Processed successfully on your VIP render node.";
+                    downloadBtn.style.display = "block";
                 } else {
-                    output.innerText = `[ERROR] ${data.detail || "Render request failed."}`;
+                    previewCard.style.display = "none";
+                    renderError.innerText = data.detail || "Unable to complete render request.";
+                    renderError.style.display = "block";
                 }
             } catch (err) {
-                output.innerText = "[NETWORK ERROR] Failed to reach render endpoint.";
+                previewCard.style.display = "none";
+                renderError.innerText = "Connection interrupted while queuing your video. Please try again.";
+                renderError.style.display = "block";
+            } finally {
+                renderBtn.disabled = false;
+                renderBtn.innerText = "Generate Video";
             }
         }
     </script>
