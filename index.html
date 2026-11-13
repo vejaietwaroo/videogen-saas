@@ -3,94 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen SaaS Dashboard</title>
+    <title>VideoGen SaaS Client</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; max-width: 600px; margin: 40px auto; padding: 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        h2 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155; }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0 16px 0; background: #0f172a; border: 1px solid #475569; color: #fff; border-radius: 6px; box-sizing: border-box; }
-        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-        button:hover { background: #0ea5e9; }
-        pre { background: #0f172a; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; border: 1px solid #334155; }
+        body {
+            background-color: #0b1120;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            color: #38bdf8;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background-color: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+        input, textarea {
+            width: 100%;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #f8fafc;
+            padding: 12px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: monospace;
+        }
+        button {
+            width: 100%;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0369a1;
+        }
+        .console-box {
+            background-color: #090d16;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 40px;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>VideoGen SaaS Client</h1>
 
-    <h2>VideoGen SaaS Client</h2>
+        <div class="card">
+            <h2>1. License Verification</h2>
+            <label for="licenseKey">Enter License Key:</label>
+            <input type="text" id="licenseKey" placeholder="LTD-VIP-2026">
+            <button onclick="verifyLicense()">Verify &amp; Get Token</button>
+        </div>
 
-    <!-- License Verification Section -->
-    <div class="card">
-        <h3>1. License Verification</h3>
-        <label>Enter License Key:</label>
-        <input type="text" id="licenseKey" value="LTD-VIP-2026">
-        <button onclick="verifyLicense()">Verify & Get Token</button>
-    </div>
+        <div class="card">
+            <h2>2. Queue Video Render</h2>
+            <label for="renderPrompt">Video Prompt / Settings:</label>
+            <textarea id="renderPrompt" placeholder="Morning meditation and yoga routine"></textarea>
+            <button onclick="triggerRender()">Queue Secure Render</button>
+        </div>
 
-    <!-- Secure Render Section -->
-    <div class="card">
-        <h3>2. Queue Video Render</h3>
-        <label>Video Prompt / Settings:</label>
-        <textarea id="renderPrompt">Morning meditation and yoga routine</textarea>
-        <button onclick="triggerRender()">Queue Secure Render</button>
-    </div>
-
-    <!-- Status Output -->
-    <div class="card">
-        <h3>Console Output</h3>
-        <pre id="output">System ready. Enter your key above.</pre>
+        <div class="card">
+            <h2>Console Output</h2>
+            <div id="output" class="console-box">System ready. Enter your key above.</div>
+        </div>
     </div>
 
     <script>
-        let authToken = "";
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? "http://127.0.0.1:8000"
+            : "https://videogen-saas.onrender.com";
+
+        let authToken = null;
 
         async function verifyLicense() {
-            const key = document.getElementById("licenseKey").value;
+            const keyInput = document.getElementById("licenseKey").value.trim();
             const output = document.getElementById("output");
-            
+
+            if (!keyInput) {
+                output.innerText = "[ERROR] Please enter a license key.";
+                return;
+            }
+
+            output.innerText = "[INFO] Verifying license key...";
+
             try {
-                const response = await fetch("http://127.0.0.1:8000/api/verify-license", {
+                const response = await fetch(`${API_BASE}/api/verify-license`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ license_key: key })
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ license_key: keyInput })
                 });
+
                 const data = await response.json();
+
                 if (response.ok) {
-                    authToken = data.access_token;
-                    output.innerText = `[SUCCESS] License Verified!\nJWT Token acquired:\n${authToken}`;
+                    authToken = data.access_token || data.token;
+                    output.innerText = `[SUCCESS] License Verified!\nToken acquired and stored for session.`;
                 } else {
-                    output.innerText = `[ERROR] ${data.detail || 'Verification failed'}`;
+                    output.innerText = `[ERROR] ${data.detail || "License verification failed."}`;
                 }
             } catch (err) {
-                output.innerText = `[NETWORK ERROR] Could not connect to backend server. Make sure Uvicorn is running.`;
+                output.innerText = "[NETWORK ERROR] Could not connect to backend server.";
             }
         }
 
         async function triggerRender() {
-            const promptText = document.getElementById("renderPrompt").value;
+            const promptText = document.getElementById("renderPrompt").value.trim();
             const output = document.getElementById("output");
 
             if (!authToken) {
-                output.innerText = `[ERROR] Please verify your license key first to get an auth token!`;
+                output.innerText = "[ERROR] Please verify your license key first to get an auth token!";
                 return;
             }
 
+            if (!promptText) {
+                output.innerText = "[ERROR] Please enter a video prompt.";
+                return;
+            }
+
+            output.innerText = "[INFO] Queuing render job...";
+
             try {
-                const response = await fetch("https://videogen-saas.onrender.com/api/render", {
-    method: "POST",
-    headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${authToken}`
-    },
-    body: JSON.stringify({ prompt: promptText })
-});
+                const response = await fetch(`${API_BASE}/api/render`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+
                 const data = await response.json();
+
                 if (response.ok) {
                     output.innerText = `[SUCCESS] Render Job Queued!\nResponse:\n${JSON.stringify(data, null, 2)}`;
                 } else {
-                    output.innerText = `[ERROR] ${data.detail || 'Render request failed'}`;
+                    output.innerText = `[ERROR] ${data.detail || "Render request failed."}`;
                 }
             } catch (err) {
-                output.innerText = `[NETWORK ERROR] Failed to reach render endpoint.`;
+                output.innerText = "[NETWORK ERROR] Failed to reach render endpoint.";
             }
         }
     </script>
