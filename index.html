@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen SaaS Studio - Long-Form Creator</title>
+    <title>VideoGen SaaS Studio - Multimedia Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
@@ -11,8 +11,8 @@
         <!-- Header -->
         <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">VideoGen Studio Pro</h1>
-                <p class="text-sm text-slate-400">Long-Form YouTube & Multi-Scene AI Production Suite</p>
+                <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">VideoGen Studio Pro+</h1>
+                <p class="text-sm text-slate-400">AI Video, Voiceover, Music & Multi-Scene Production Suite</p>
             </div>
             <div id="auth-status" class="text-xs px-3 py-1.5 rounded-full bg-red-950/80 text-red-300 border border-red-800">
                 License Inactive
@@ -22,7 +22,7 @@
         <!-- License Activation Box -->
         <div id="license-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-lg">
             <h2 class="text-lg font-semibold mb-2">Activate VIP License</h2>
-            <p class="text-sm text-slate-400 mb-4">Enter your VIP lifetime license key to unlock long-form generation capabilities.</p>
+            <p class="text-sm text-slate-400 mb-4">Enter your VIP lifetime license key to unlock multimedia production.</p>
             <div class="flex gap-3">
                 <input type="text" id="license-key-input" placeholder="e.g., LTD-VIP-2026" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
                 <button onclick="activateLicense()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors cursor-pointer">Activate</button>
@@ -34,41 +34,53 @@
         <div id="studio-workspace" class="space-y-6 opacity-40 pointer-events-none transition-opacity duration-300">
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Long-Form Script & Scene Queue</h2>
+                    <h2 class="text-lg font-semibold">Script, Voice & Music Studio</h2>
                     <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Usage: 0 / 100</span>
                 </div>
 
-                <!-- Script Input (Line separated for multiple scenes) -->
+                <!-- Script Input -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Full Script / Scene Descriptions (One scene per line for 15+ min assembly)</label>
-                    <textarea id="prompt-input" rows="6" placeholder="Scene 1: Cinematic establishing shot of a futuristic city at dawn...&#10;Scene 2: Close up of our protagonist walking through neon streets...&#10;Scene 3: Dramatic confrontation in the rain..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500 font-mono"></textarea>
-                    <p class="text-xs text-slate-500 mt-1">Each line is automatically processed into a sequential video scene to build your long-form video sequence.</p>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Multi-Scene Script (One scene/narration line per row)</label>
+                    <textarea id="prompt-input" rows="5" placeholder="Scene 1: An expansive aerial view over mystic mountains at sunrise...&#10;Scene 2: A close-up of a peaceful meditation guide instructing breathwork..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500 font-mono"></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <!-- Video Format -->
+                    <!-- Format -->
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1.5">Format</label>
                         <select id="video-format" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="long_form" selected>Long-Form (16:9 YouTube / Documentary)</option>
-                            <option value="short_form">Short-Form (9:16 Vertical / Reels)</option>
+                            <option value="long_form" selected>Long-Form (16:9 YouTube)</option>
+                            <option value="short_form">Short-Form (9:16 Vertical Reels)</option>
                         </select>
                     </div>
 
-                    <!-- Clip Duration -->
+                    <!-- Voiceover Persona -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Clip Duration per Scene</label>
-                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="5">5 Seconds</option>
-                            <option value="10" selected>10 Seconds</option>
-                            <option value="15">15 Seconds</option>
-                            <option value="20">20 Seconds</option>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">AI Voiceover Persona</label>
+                        <select id="voice-persona" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="en-US-Standard-A">Deep Cinematic Narrator (Male)</option>
+                            <option value="en-US-Standard-B">Warm Wellness Guide (Female)</option>
+                            <option value="en-US-Standard-C">Energetic Presenter (Dynamic)</option>
+                            <option value="noir_gritty">Gritty Thriller / Suspense Voice</option>
                         </select>
                     </div>
 
+                    <!-- Background Music -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Background Sound Track</label>
+                        <select id="music-track" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="ambient_meditation">Ambient Zen Meditation (Calming)</option>
+                            <option value="epic_cinematic">Epic Cinematic Orchestral (Dramatic)</option>
+                            <option value="lofi_chill">Lofi Chill Beats (Productivity)</option>
+                            <option value="suspense_drone">Dark Suspense Drone (Thriller)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <!-- Avatar Preset -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Presenter Avatar</label>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Avatar Style</label>
                         <select id="avatar-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
                             <option value="none">None (Standard Cinematic Scene)</option>
                             <option value="wellness_coach">Wellness Guide / Tai Chi Instructor</option>
@@ -77,25 +89,35 @@
                             <option value="noir_detective">Thriller / Noir Character</option>
                         </select>
                     </div>
+
+                    <!-- Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Clip Duration per Scene</label>
+                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="5">5 Seconds</option>
+                            <option value="10" selected>10 Seconds</option>
+                            <option value="15">15 Seconds</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Auto-Captions Toggle -->
                 <div class="flex items-center gap-2 mb-6 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
                     <input type="checkbox" id="enable-captions" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer">
-                    <label for="enable-captions" class="text-sm text-slate-300 cursor-pointer">Enable Burn-in Auto-Captions on All Scenes</label>
+                    <label for="enable-captions" class="text-sm text-slate-300 cursor-pointer">Burn-in Karaoke Style Subtitles</label>
                 </div>
 
                 <!-- Generate Button -->
                 <button id="generate-btn" onclick="generateVideo()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-lg text-sm shadow-md transition-all cursor-pointer flex justify-center items-center gap-2">
-                    <span>Generate Long-Form Video Batch</span>
+                    <span>Generate Complete Multimedia Video Batch</span>
                 </button>
             </div>
 
             <!-- Output / Results Section -->
             <div id="output-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 hidden">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Rendered Scenes Sequence</h3>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Rendered Multimedia Production</h3>
                 <div id="result-container" class="flex flex-col items-center justify-center space-y-4">
-                    <!-- Video player and scene playlist injected here -->
+                    <!-- Video player and playlists injected here -->
                 </div>
             </div>
         </div>
@@ -158,6 +180,8 @@
         async function generateVideo() {
             const rawText = document.getElementById("prompt-input").value.trim();
             const video_format = document.getElementById("video-format").value;
+            const voice_persona = document.getElementById("voice-persona").value;
+            const music_track = document.getElementById("music-track").value;
             const duration = document.getElementById("video-duration").value;
             const avatar = document.getElementById("avatar-select").value;
             const enable_captions = document.getElementById("enable-captions").checked;
@@ -167,18 +191,17 @@
             const resultContainer = document.getElementById("result-container");
 
             if (!rawText) {
-                alert("Please enter your script or scene descriptions.");
+                alert("Please enter your scene script.");
                 return;
             }
 
-            // Split script by newlines into individual scene prompts
             const scenes = rawText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing ${scenes.length} Scenes for Long-Form Video...`;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Synthesizing Voiceover, Music & Video Scenes...`;
             
             outputSec.classList.remove("hidden");
-            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Generating sequential video clips and burning captions...</p></div>`;
+            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Producing immersive multimedia assets...</p></div>`;
 
             try {
                 const res = await fetch("/api/render", {
@@ -187,7 +210,7 @@
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ scenes, video_format, duration, avatar, enable_captions })
+                    body: JSON.stringify({ scenes, video_format, voice_persona, music_track, duration, avatar, enable_captions })
                 });
 
                 const data = await res.json();
@@ -195,9 +218,9 @@
                 if (res.ok && data.video_urls) {
                     document.getElementById("usage-badge").textContent = `Usage: ${data.videos_rendered} / ${data.limit}`;
                     
-                    let clipsHTML = `<div class="w-full mb-4"><p class="text-xs text-indigo-400 mb-2 font-semibold">Primary Scene Preview:</p><video controls autoplay loop class="w-full rounded-lg shadow-xl max-h-[450px] object-cover"><source src="${data.video_url}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
+                    let clipsHTML = `<div class="w-full mb-4"><p class="text-xs text-indigo-400 mb-2 font-semibold">Primary Production Preview:</p><video controls autoplay loop class="w-full rounded-lg shadow-xl max-h-[450px] object-cover"><source src="${data.video_url}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
                     
-                    clipsHTML += `<div class="w-full mt-4 border-t border-slate-800 pt-4"><p class="text-xs text-slate-400 mb-3 font-semibold">All Generated Scenes (${data.video_urls.length} clips ready for editing/stitching):</p><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+                    clipsHTML += `<div class="w-full mt-4 border-t border-slate-800 pt-4"><p class="text-xs text-slate-400 mb-3 font-semibold">All Rendered Clips (${data.video_urls.length} scenes with Voice: ${data.active_voice} & Music: ${data.active_music}):</p><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
                     
                     data.video_urls.forEach((url, idx) => {
                         clipsHTML += `<div class="bg-slate-950 p-2 rounded border border-slate-800 flex flex-col items-center"><span class="text-xs text-slate-400 mb-1">Scene ${idx + 1}</span><a href="${url}" target="_blank" class="text-xs text-indigo-400 hover:underline truncate w-full text-center">Download Clip</a></div>`;
@@ -209,10 +232,10 @@
                     resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Error: ${data.detail || "Rendering failed."}</p>`;
                 }
             } catch (err) {
-                resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Network error during batch render process.</p>`;
+                resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Network error during multimedia render.</p>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<span>Generate Long-Form Video Batch</span>`;
+                btn.innerHTML = `<span>Generate Complete Multimedia Video Batch</span>`;
             }
         }
     </script>
