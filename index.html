@@ -3,387 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen SaaS - AI Video Studio</title>
-    <style>
-        :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --success: #34d399;
-            --warning: #f59e0b;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; }
-        
-        .container { width: 100%; max-width: 800px; }
-        
-        header { text-align: center; margin-bottom: 2rem; }
-        header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        header p { color: var(--text-muted); font-size: 1rem; }
-
-        .card { background-color: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .card h2 { font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
-        
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted); }
-        input[type="text"], textarea, select { width: 100%; padding: 0.75rem; background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 1rem; }
-        textarea { resize: vertical; min-height: 80px; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
-
-        .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 0.875rem; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        .btn:hover { background-color: var(--accent-hover); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .badge { font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: #334155; color: var(--text-muted); font-weight: 500; }
-        .badge.active { background-color: rgba(52, 211, 153, 0.2); color: var(--success); border: 1px solid var(--success); }
-
-        .locked { opacity: 0.4; pointer-events: none; filter: grayscale(50%); transition: all 0.3s; }
-        
-        .error-msg { background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; margin-top: 1rem; display: none; }
-
-        .preview-box { text-align: center; padding: 2rem 1rem; border: 2px dashed var(--border); border-radius: 8px; background-color: var(--bg-primary); margin-top: 1rem; }
-        video { width: 100%; max-height: 450px; border-radius: 8px; background: #000; margin-top: 1rem; }
-
-        .addons-toggle { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-        .addons-body { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; }
-
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
-        .history-info { overflow: hidden; margin-right: 1rem; }
-        .history-prompt { font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .history-meta { font-size: 0.75rem; color: var(--text-muted); }
-        .btn-small { padding: 0.35rem 0.75rem; font-size: 0.75rem; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; }
-    </style>
+    <title>VideoGen SaaS Studio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body>
-
-    <div class="container">
-        <header>
-            <h1>VideoGen SaaS Studio</h1>
-            <p>Generate cinematic AI videos, talking avatars, and social shorts instantly.</p>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+    <div class="max-w-4xl mx-auto px-4 py-10">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">VideoGen Studio</h1>
+                <p class="text-sm text-slate-400">Cinematic AI Video Generation Platform</p>
+            </div>
+            <div id="auth-status" class="text-xs px-3 py-1.5 rounded-full bg-red-950/80 text-red-300 border border-red-800">
+                License Inactive
+            </div>
         </header>
 
-        <!-- STEP 1: LICENSE ACTIVATION -->
-        <div class="card" id="activationCard">
-            <h2>
-                <span>License Key Activation</span>
-                <span class="badge" id="licenseBadge">Locked</span>
-            </h2>
-            <div class="form-group">
-                <label for="licenseKey">VIP Lifetime License Key</label>
-                <input type="text" id="licenseKey" placeholder="Enter your key (e.g. LTD-VIP-2026)" value="LTD-VIP-2026">
+        <!-- License Activation Box -->
+        <div id="license-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-lg">
+            <h2 class="text-lg font-semibold mb-2">Activate VIP License</h2>
+            <p class="text-sm text-slate-400 mb-4">Enter your VIP lifetime license key to unlock generation capabilities.</p>
+            <div class="flex gap-3">
+                <input type="text" id="license-key-input" placeholder="e.g., LTD-VIP-2026" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                <button onclick="activateLicense()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors cursor-pointer">Activate</button>
             </div>
-            <button class="btn" id="verifyBtn" onclick="verifyLicense()">Activate License</button>
-            <div id="authError" class="error-msg"></div>
+            <p id="license-msg" class="text-xs mt-2 text-red-400 hidden"></p>
         </div>
 
-        <!-- STEP 2: VIDEO STUDIO WORKSPACE -->
-        <div class="card locked" id="studioCard">
-            <h2>Video Generation Studio</h2>
-            
-            <div class="form-group">
-                <label for="renderPrompt">Visual Scene Description</label>
-                <textarea id="renderPrompt" placeholder="Describe your scene in detail (e.g., A cinematic wide shot of a woman standing barefoot in her dimly lit bedroom beside a glowing salt lamp, beginning to soften her knees...)"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="videoFormat">Aspect Ratio & Format</label>
-                <select id="videoFormat">
-                    <option value="9:16">Vertical (Shorts / Reels / TikTok)</option>
-                    <option value="16:9">Landscape (YouTube / Long-form)</option>
-                    <option value="1:1">Square (Instagram Post)</option>
-                </select>
-            </div>
-
-            <!-- MODULAR ADD-ONS SECTION -->
-            <button class="addons-toggle" onclick="toggleAddons()">
-                <span id="addonsToggleBadge">Optional • Show</span> 
-                <span>⚙️ Modular Add-ons (Avatar, Voice, Music, Captions)</span>
-            </button>
-
-            <div class="addons-body" id="addonsBody" style="display: none;">
-                <div class="form-group">
-                    <label for="avatarSelect">AI Talking Avatar Persona</label>
-                    <select id="avatarSelect">
-                        <option value="none">None (Cinematic Visual Only)</option>
-                        <option value="female_presenter">Female Presenter (Active Movement & Direct Address)</option>
-                        <option value="male_presenter">Male Presenter (Active Movement & Direct Address)</option>
-                        <option value="wellness_coach">Wellness Coach (Tai Chi & Stretching Guide)</option>
-                        <option value="noir_detective">Thriller / Noir Character</option>
-                    </select>
+        <!-- Studio Generator Workspace (Hidden until activated) -->
+        <div id="studio-workspace" class="space-y-6 opacity-40 pointer-events-none transition-opacity duration-300">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Video Parameters</h2>
+                    <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Usage: 0 / 50</span>
                 </div>
 
-                <div class="form-group" id="dialogueWrapper">
-                    <label for="voicePersona">Voice Persona & Dialogue Script</label>
-                    <select id="voicePersona" style="margin-bottom: 0.5rem;">
-                        <option value="none">Select Voice Persona...</option>
-                        <option value="female_calm">Sarah (Calm, Warm Female Voice)</option>
-                        <option value="male_cinematic">Adam (Deep, Cinematic Male Voice)</option>
-                        <option value="female_suspense">Bella (Suspenseful Female Voice)</option>
-                        <option value="male_energetic">Michael (Energetic Male Voice)</option>
-                    </select>
-                    <textarea id="dialogueScript" placeholder="Type what your avatar should say out loud (e.g., Can't sleep? Try this 30-second Tai Chi reset...)"></textarea>
+                <!-- Prompt Input -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Scene Description</label>
+                    <textarea id="prompt-input" rows="3" placeholder="Describe your cinematic scene in detail..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label for="musicTrack">Background Soundtrack</label>
-                    <select id="musicTrack">
-                        <option value="none">None (Silent / Natural Scene Audio)</option>
-                        <option value="cinematic_ambient">Cinematic Ambient Atmospheric Score</option>
-                        <option value="calm_lofi">Calm Relaxing Lofi Chill Beats</option>
-                        <option value="suspense_thriller">Dark Psychological Thriller Underscore</option>
-                        <option value="upbeat_social">Upbeat Modern Energetic Corporate Tech</option>
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Aspect Ratio -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Aspect Ratio</label>
+                        <select id="aspect-ratio" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="9:16">9:16 (Vertical / Reels / TikTok)</option>
+                            <option value="16:9">16:9 (Horizontal / YouTube)</option>
+                            <option value="1:1">1:1 (Square)</option>
+                        </select>
+                    </div>
+
+                    <!-- Avatar Preset -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Presenter Avatar</label>
+                        <select id="avatar-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="none">None (Standard Cinematic Scene)</option>
+                            <option value="wellness_coach">Wellness Guide / Tai Chi Instructor</option>
+                            <option value="female_presenter">Female Presenter</option>
+                            <option value="male_presenter">Male Presenter</option>
+                            <option value="noir_detective">Thriller / Noir Character</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
-                    <input type="checkbox" id="autoCaptions" style="width: 18px; height: 18px; accent-color: var(--accent);">
-                    <label for="autoCaptions" style="margin-bottom: 0; cursor: pointer; color: var(--text-main);">Burn Dynamic Auto-Captions (Recommended for Reels & Shorts)</label>
+                <!-- Generate Button -->
+                <button id="generate-btn" onclick="generateVideo()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-lg text-sm shadow-md transition-all cursor-pointer flex justify-center items-center gap-2">
+                    <span>Generate Cinematic Video</span>
+                </button>
+            </div>
+
+            <!-- Output / Results Section -->
+            <div id="output-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 hidden">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Rendered Result</h3>
+                <div id="result-container" class="flex flex-col items-center justify-center">
+                    <!-- Video player or loading spinner injected here -->
                 </div>
             </div>
-
-            <button class="btn" id="renderBtn" onclick="triggerRender()" style="margin-top: 1rem;">Generate Video</button>
-            <div id="renderError" class="error-msg"></div>
-        </div>
-
-        <!-- RENDER PREVIEW CARD -->
-        <div class="card" id="previewCard" style="display: none;">
-            <h2 id="renderStatusText" style="color: var(--warning);">Your video is rendering...</h2>
-            <div class="preview-box" id="placeholderBox">
-                <div id="renderSpinner" style="font-size: 2rem; margin-bottom: 0.5rem; animation: spin 2s linear infinite;">⏳</div>
-                <div id="previewTitle" style="font-weight: 600; margin-bottom: 0.25rem;">Generating Your Video</div>
-                <div id="previewSubtitle" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Processing render request on cloud node...</div>
-                <div id="renderedPromptDisplay" style="font-size: 0.8rem; font-style: italic; color: var(--text-muted);"></div>
-            </div>
-            <div id="videoContainer" style="display: none;">
-                <video id="resultVideo" controls autoplay></video>
-                <a id="downloadBtn" class="btn" style="margin-top: 1rem; text-decoration: none; display: none;" target="_blank">Download Rendered Video</a>
-            </div>
-        </div>
-
-        <!-- RENDER HISTORY VAULT -->
-        <div class="card" id="historyCard" style="display: none;">
-            <h2>Recent Render History Vault</h2>
-            <div id="historyList"></div>
         </div>
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-            ? "http://127.0.0.1:8000"
-            : "https://videogen-saas.onrender.com";
+        let authToken = localStorage.getItem("videogen_token") || "";
 
-        let authToken = null;
-        const renderHistory = [];
-
-        function toggleAddons() {
-            const body = document.getElementById("addonsBody");
-            const badge = document.getElementById("addonsToggleBadge");
-            const isHidden = body.style.display === "none";
-            body.style.display = isHidden ? "block" : "none";
-            badge.innerText = isHidden ? "Optional • Hide" : "Optional • Show";
+        if (authToken) {
+            lockUI(true);
         }
 
-        async function verifyLicense() {
-            const keyInput = document.getElementById("licenseKey").value.trim();
-            const verifyBtn = document.getElementById("verifyBtn");
-            const authError = document.getElementById("authError");
-
-            authError.style.display = "none";
-
-            if (!keyInput) {
-                authError.innerText = "Please enter your license key to continue.";
-                authError.style.display = "block";
+        async function activateLicense() {
+            const licenseKey = document.getElementById("license-key-input").value.trim();
+            const msgEl = document.getElementById("license-msg");
+            
+            if (!licenseKey) {
+                msgEl.textContent = "Please enter a license key.";
+                msgEl.classList.remove("hidden");
                 return;
             }
 
-            verifyBtn.disabled = true;
-            verifyBtn.innerText = "Verifying License...";
-
             try {
-                const response = await fetch(`${API_BASE}/api/verify-license`, {
+                const res = await fetch("/api/verify-license", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ license_key: keyInput })
+                    body: JSON.stringify({ license_key: licenseKey })
                 });
+                const data = await res.json();
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    authToken = data.access_token || data.token;
-
-                    const badge = document.getElementById("licenseBadge");
-                    badge.innerText = "✓ Active VIP License";
-                    badge.classList.add("active");
-
-                    document.getElementById("activationCard").style.display = "none";
-                    document.getElementById("studioCard").classList.remove("locked");
+                if (res.ok && data.access_token) {
+                    authToken = data.access_token;
+                    localStorage.setItem("videogen_token", authToken);
+                    lockUI(true);
+                    msgEl.classList.add("hidden");
                 } else {
-                    authError.innerText = data.detail || "Invalid license key.";
-                    authError.style.display = "block";
+                    msgEl.textContent = data.detail || "Invalid license key.";
+                    msgEl.classList.remove("hidden");
                 }
             } catch (err) {
-                authError.innerText = "Unable to reach activation server.";
-                authError.style.display = "block";
-            } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.innerText = "Activate License";
+                msgEl.textContent = "Connection error verifying license.";
+                msgEl.classList.remove("hidden");
             }
         }
 
-        async function triggerRender() {
-            const promptText = document.getElementById("renderPrompt").value.trim();
-            const aspectRatio = document.getElementById("videoFormat").value;
-            const avatar = document.getElementById("avatarSelect").value;
-            const voicePersona = document.getElementById("voicePersona").value;
-            const dialogueText = document.getElementById("dialogueScript").value.trim();
-            const musicTrack = document.getElementById("musicTrack").value;
-            const autoCaptions = document.getElementById("autoCaptions").checked;
+        function lockUI(active) {
+            const statusEl = document.getElementById("auth-status");
+            const workspace = document.getElementById("studio-workspace");
+            const licenseSec = document.getElementById("license-section");
 
-            const renderBtn = document.getElementById("renderBtn");
-            const renderError = document.getElementById("renderError");
+            if (active) {
+                statusEl.textContent = "VIP License Active";
+                statusEl.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800";
+                workspace.style.opacity = "1";
+                workspace.style.pointerEvents = "auto";
+                licenseSec.style.display = "none";
+            }
+        }
 
-            renderError.style.display = "none";
+        async function generateVideo() {
+            const prompt = document.getElementById("prompt-input").value.trim();
+            const aspect_ratio = document.getElementById("aspect-ratio").value;
+            const avatar = document.getElementById("avatar-select").value;
+            const btn = document.getElementById("generate-btn");
+            const outputSec = document.getElementById("output-section");
+            const resultContainer = document.getElementById("result-container");
 
-            if (!authToken) {
-                renderError.innerText = "Please activate your license key first.";
-                renderError.style.display = "block";
+            if (!prompt) {
+                alert("Please enter a visual scene description.");
                 return;
             }
 
-            if (!promptText) {
-                renderError.innerText = "Please describe the visual scene you want to generate.";
-                renderError.style.display = "block";
-                return;
-            }
-
-            const previewCard = document.getElementById("previewCard");
-            const renderSpinner = document.getElementById("renderSpinner");
-            const renderStatusText = document.getElementById("renderStatusText");
-            const previewIcon = document.getElementById("previewIcon");
-            const previewTitle = document.getElementById("previewTitle");
-            const previewSubtitle = document.getElementById("previewSubtitle");
-            const downloadBtn = document.getElementById("downloadBtn");
-            const videoContainer = document.getElementById("videoContainer");
-            const placeholderBox = document.getElementById("placeholderBox");
-            const resultVideo = document.getElementById("resultVideo");
-
-            previewCard.style.display = "block";
-            renderSpinner.style.display = "block";
-            renderStatusText.style.color = "#f59e0b";
-            renderStatusText.innerText = "Your video is rendering...";
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Rendering Video (~30s)...`;
             
-            videoContainer.style.display = "none";
-            resultVideo.src = "";
-            placeholderBox.style.display = "block";
-            previewTitle.innerText = "Generating Your Video";
-            previewSubtitle.innerText = `Preparing ${aspect_ratio_label(aspectRatio)} render on cloud node...`;
-            document.getElementById("renderedPromptDisplay").innerText = `"${promptText}"`;
-            downloadBtn.style.display = "none";
-
-            renderBtn.disabled = true;
-            renderBtn.innerText = "Rendering...";
+            outputSec.classList.remove("hidden");
+            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Synthesizing cinematic visuals via Fal.ai...</p></div>`;
 
             try {
-                const response = await fetch(`${API_BASE}/api/render`, {
+                const res = await fetch("/api/render", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ 
-                        prompt: promptText,
-                        aspect_ratio: aspectRatio,
-                        avatar: avatar,
-                        voice: voicePersona,
-                        dialogue: dialogueText,
-                        music: musicTrack,
-                        captions: autoCaptions
-                    })
+                    body: JSON.stringify({ prompt, aspect_ratio, avatar })
                 });
 
-                const data = await response.json();
+                const data = await res.json();
 
-                if (response.ok) {
-                    renderSpinner.style.display = "none";
-                    renderStatusText.style.color = "#34d399";
-                    renderStatusText.innerText = "✓ Render Complete";
-                    
-                    if (data.video_url) {
-                        placeholderBox.style.display = "none";
-                        resultVideo.src = data.video_url;
-                        videoContainer.style.display = "block";
-
-                        downloadBtn.href = data.video_url;
-                        downloadBtn.style.display = "block";
-
-                        addToHistory(promptText, aspectRatio, data.video_url);
-                    }
+                if (res.ok && data.video_url) {
+                    document.getElementById("usage-badge").textContent = `Usage: ${data.videos_rendered} / ${data.limit}`;
+                    resultContainer.innerHTML = `
+                        <video controls autoplay loop class="w-full rounded-lg shadow-xl max-h-[500px] object-cover mb-4">
+                            <source src="${data.video_url}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <a href="${data.video_url}" target="_blank" download class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg transition-colors">Download Video File</a>
+                    `;
                 } else {
-                    previewCard.style.display = "none";
-                    renderError.innerText = data.detail || "Unable to complete render request.";
-                    renderError.style.display = "block";
+                    resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Error: ${data.detail || "Rendering failed."}</p>`;
                 }
             } catch (err) {
-                previewCard.style.display = "none";
-                renderError.innerText = "Connection interrupted while queuing your video.";
-                renderError.style.display = "block";
+                resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Network error during render process.</p>`;
             } finally {
-                renderBtn.disabled = false;
-                renderBtn.innerText = "Generate Video";
+                btn.disabled = false;
+                btn.innerHTML = `<span>Generate Cinematic Video</span>`;
             }
-        }
-
-        function addToHistory(prompt, ratio, url) {
-            renderHistory.unshift({ prompt, ratio, url, time: new Date().toLocaleTimeString() });
-            const historyCard = document.getElementById("historyCard");
-            const historyList = document.getElementById("historyList");
-            
-            historyCard.style.display = "block";
-            historyList.innerHTML = "";
-
-            renderHistory.forEach((item, index) => {
-                const div = document.createElement("div");
-                div.className = "history-item";
-                div.innerHTML = `
-                    <div class="history-info">
-                        <div class="history-prompt">${item.prompt}</div>
-                        <div class="history-meta">${item.ratio} • Rendered at ${item.time}</div>
-                    </div>
-                    <div class="history-actions">
-                        <button class="btn-small" onclick="playHistoryItem(${index})">Play</button>
-                        <a href="${item.url}" class="btn-small" target="_blank">Download</a>
-                    </div>
-                `;
-                historyList.appendChild(div);
-            });
-        }
-
-        function playHistoryItem(index) {
-            const item = renderHistory[index];
-            const previewCard = document.getElementById("previewCard");
-            const videoContainer = document.getElementById("videoContainer");
-            const placeholderBox = document.getElementById("placeholderBox");
-            const resultVideo = document.getElementById("resultVideo");
-            const downloadBtn = document.getElementById("downloadBtn");
-
-            previewCard.style.display = "block";
-            placeholderBox.style.display = "none";
-            resultVideo.src = item.url;
-            videoContainer.style.display = "block";
-            downloadBtn.href = item.url;
-            downloadBtn.style.display = "block";
-            window.scrollTo({ top: previewCard.offsetTop - 20, behavior: 'smooth' });
-        }
-
-        function aspect_ratio_label(ratio) {
-            if (ratio === "9:16") return "Vertical (Shorts/Reels)";
-            if (ratio === "16:9") return "Landscape (Long-form)";
-            return "Square";
         }
     </script>
 </body>
