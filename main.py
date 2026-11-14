@@ -40,27 +40,27 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
 @app.post("/api/render")
 def secure_render(data: dict, user: dict = Depends(get_current_user)):
     prompt_text = data.get("prompt")
+    aspect_ratio = data.get("aspect_ratio", "9:16")
+
     if not prompt_text:
         raise HTTPException(status_code=400, detail="Prompt is required")
 
-    # Ensure FAL_KEY is available in environment
     fal_key = os.environ.get("FAL_KEY")
     if not fal_key:
         raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
 
     try:
-      
-        # Call Fal.ai Text-to-Video model securely
         handler = fal_client.submit(
-            "minimax/h3-max/text-to-video",
+            "blackforestlabs/flux-3-max/text-to-video",
             arguments={
                 "prompt": prompt_text,
-                "prompt_expansion_mode": "disabled"
+                "aspect_ratio": aspect_ratio,
+                "duration": 15
             }
         )
+        
         result = handler.get()
         
-        # Extract the video file URL from Fal.ai response
         video_url = None
         if "video" in result and "url" in result["video"]:
             video_url = result["video"]["url"]
@@ -75,8 +75,7 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
             "message": "Video generated successfully via Fal.ai",
             "video_url": video_url,
             "request_payload": data
-        }       
-         
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
 
