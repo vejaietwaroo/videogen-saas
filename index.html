@@ -106,6 +106,19 @@
             margin-bottom: 20px;
         }
 
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 560px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -149,6 +162,10 @@
             line-height: 1.5;
         }
 
+        textarea.dialogue-box {
+            min-height: 75px;
+        }
+
         /* Optional Add-Ons Section */
         .addons-panel {
             background-color: #0b1120;
@@ -185,6 +202,38 @@
             margin-top: 18px;
             padding-top: 16px;
             border-top: 1px solid #1e293b;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background-color: #111827;
+            border: 1px solid #283548;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 18px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .checkbox-label {
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .checkbox-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: auto;
         }
 
         button {
@@ -404,13 +453,43 @@
             <label for="renderPrompt">Visual Scene Description</label>
             <textarea id="renderPrompt" placeholder="Serene morning sunlight streaming into a minimalist wooden studio, a wellness guide standing on a clean mat..."></textarea>
 
+            <!-- Production Add-Ons Panel -->
             <div class="addons-panel">
                 <div class="addons-header" onclick="toggleAddons()">
-                    <span class="addons-title">✨ Production Add-Ons (Avatar, Music & Captions)</span>
+                    <span class="addons-title">✨ Production Add-Ons (Avatar, Speech, Music & Captions)</span>
                     <span id="addonsToggleBadge" class="addons-badge">Optional • Show</span>
                 </div>
 
                 <div id="addonsBody" class="addons-body" style="display: none;">
+                    <div class="form-row">
+                        <div>
+                            <label for="avatarSelect">AI Talking Avatar <span>(Optional)</span></label>
+                            <select id="avatarSelect">
+                                <option value="none">None (Pure Scene Visuals)</option>
+                                <option value="female_presenter">Studio Female Presenter</option>
+                                <option value="male_presenter">Executive Male Presenter</option>
+                                <option value="wellness_coach">Mindfulness & Wellness Guide</option>
+                                <option value="noir_detective">Dramatic Thriller Character</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="voicePersona">Voiceover / Speech <span>(Optional)</span></label>
+                            <select id="voicePersona" onchange="toggleDialogueBox()">
+                                <option value="none">None (No Spoken Audio)</option>
+                                <option value="female_calm">Warm Female Guide</option>
+                                <option value="male_cinematic">Deep Cinematic Narrator</option>
+                                <option value="female_suspense">Suspenseful Thriller Voice</option>
+                                <option value="male_energetic">Energetic Social Host</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="dialogueWrapper" style="display: none;">
+                        <label for="dialogueScript">Spoken Dialogue / Narration Script</label>
+                        <textarea id="dialogueScript" class="dialogue-box" placeholder="Type the exact words you want spoken in this scene..."></textarea>
+                    </div>
+
                     <label for="musicTrack">Background Music & Soundtrack <span>(Optional)</span></label>
                     <select id="musicTrack">
                         <option value="none">None (Silent / Natural Scene Audio)</option>
@@ -419,6 +498,12 @@
                         <option value="suspense_thriller">Dark Suspense & Mystery Pulse</option>
                         <option value="upbeat_social">Upbeat Modern Energetic Corporate</option>
                     </select>
+
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="autoCaptions">
+                        <span class="checkbox-label">Burn Dynamic Auto-Captions</span>
+                        <span class="checkbox-sub">Recommended for Reels & Shorts</span>
+                    </label>
                 </div>
             </div>
             
@@ -474,6 +559,15 @@
             badge.innerText = isHidden ? "Optional • Hide" : "Optional • Show";
         }
 
+        function toggleDialogueBox() {
+            const voice = document.getElementById("voicePersona").value;
+            const avatar = document.getElementById("avatarSelect").value;
+            const wrapper = document.getElementById("dialogueWrapper");
+            wrapper.style.display = (voice !== "none" || avatar !== "none") ? "block" : "none";
+        }
+
+        document.getElementById("avatarSelect").addEventListener("change", toggleDialogueBox);
+
         async function verifyLicense() {
             const keyInput = document.getElementById("licenseKey").value.trim();
             const verifyBtn = document.getElementById("verifyBtn");
@@ -524,7 +618,11 @@
         async function triggerRender() {
             const promptText = document.getElementById("renderPrompt").value.trim();
             const aspectRatio = document.getElementById("videoFormat").value;
+            const avatar = document.getElementById("avatarSelect").value;
+            const voicePersona = document.getElementById("voicePersona").value;
+            const dialogueText = document.getElementById("dialogueScript").value.trim();
             const musicTrack = document.getElementById("musicTrack").value;
+            const autoCaptions = document.getElementById("autoCaptions").checked;
 
             const renderBtn = document.getElementById("renderBtn");
             const renderError = document.getElementById("renderError");
@@ -581,7 +679,11 @@
                     body: JSON.stringify({ 
                         prompt: promptText,
                         aspect_ratio: aspectRatio,
-                        music: musicTrack
+                        avatar: avatar,
+                        voice: voicePersona,
+                        dialogue: dialogueText,
+                        music: musicTrack,
+                        captions: autoCaptions
                     })
                 });
 
