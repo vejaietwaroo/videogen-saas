@@ -8,16 +8,15 @@ import os
 import fal_client
 
 app = FastAPI(title="VideoGen SaaS API", version="4.1.1")
+app = FastAPI(title="VideoGen SaaS API", version="4.1.1")
 
 @app.get("/", response_class=HTMLResponse)
-def serve_frontend():
-    html_path = os.path.join(os.path.dirname(__file__), "index.html")
-   @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(html_path):
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read(), status_code=200)
+    return HTMLResponse(content="<h1>Error: index.html not found</h1>", status_code=404)
     return HTMLResponse(content="<h1>Error: index.html not found</h1>", status_code=404)
 
 security = HTTPBearer()
