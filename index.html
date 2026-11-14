@@ -114,7 +114,7 @@
             font-weight: 500;
         }
 
-        input, textarea {
+        input, select, textarea {
             width: 100%;
             background-color: #0b1120;
             border: 1px solid #334155;
@@ -128,14 +128,18 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, textarea:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--accent-blue);
         }
 
+        select {
+            cursor: pointer;
+        }
+
         textarea {
             resize: vertical;
-            min-height: 105px;
+            min-height: 100px;
             line-height: 1.5;
         }
 
@@ -215,12 +219,6 @@
             margin-bottom: 18px;
         }
 
-        .video-placeholder p {
-            margin: 8px 0 0;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
         .video-container {
             width: 100%;
             margin-bottom: 18px;
@@ -272,7 +270,7 @@
             <div id="licenseBadge" class="badge">Unverified License</div>
         </div>
 
-        <!-- Step 1: License Activation (Collapses automatically once verified) -->
+        <!-- Step 1: License Activation -->
         <div id="activationCard" class="card">
             <h2>Activate Your Studio License</h2>
             <p class="subtitle">Enter your VIP license key to unlock unlimited AI video generation.</p>
@@ -285,9 +283,18 @@
         <!-- Step 2: Video Creator Studio -->
         <div id="studioCard" class="card locked">
             <h2>Create New Video</h2>
-            <p class="subtitle">Describe the scene, mood, lighting, and camera movement you want to generate.</p>
+            <p class="subtitle">Select your target video format and describe your scene.</p>
+            
+            <label for="videoFormat">Video Format & Dimensions</label>
+            <select id="videoFormat">
+                <option value="9:16">YouTube Shorts / IG Reels / TikTok (Vertical 9:16)</option>
+                <option value="16:9">Long-Form / Cinematic / YouTube (Landscape 16:9)</option>
+                <option value="1:1">Square Feed Post (1:1)</option>
+            </select>
+
             <label for="renderPrompt">Scene Description</label>
-            <textarea id="renderPrompt" placeholder="A serene 15-second vertical loop of a sunlit wooden studio at sunrise, golden light streaming through tall windows onto a dark yoga mat, 4k cinematic..."></textarea>
+            <textarea id="renderPrompt" placeholder="A serene vertical loop of a sunlit wooden studio at sunrise, golden light streaming through tall windows..."></textarea>
+            
             <button id="renderBtn" onclick="triggerRender()">Generate Video</button>
             <div id="renderError" class="alert error"></div>
         </div>
@@ -352,15 +359,11 @@
                 if (response.ok) {
                     authToken = data.access_token || data.token;
 
-                    // 1. Update top badge to Active VIP License
                     const badge = document.getElementById("licenseBadge");
                     badge.innerText = "✓ Active VIP License";
                     badge.classList.add("active");
 
-                    // 2. Hide the activation card so the studio takes center stage
                     document.getElementById("activationCard").style.display = "none";
-
-                    // 3. Unlock the video creator card
                     document.getElementById("studioCard").classList.remove("locked");
                 } else {
                     authError.innerText = data.detail || "Invalid license key. Please double-check and try again.";
@@ -377,6 +380,7 @@
 
         async function triggerRender() {
             const promptText = document.getElementById("renderPrompt").value.trim();
+            const aspectRatio = document.getElementById("videoFormat").value;
             const renderBtn = document.getElementById("renderBtn");
             const renderError = document.getElementById("renderError");
 
@@ -394,7 +398,6 @@
                 return;
             }
 
-            // Show Output Preview Stage in "Rendering" state
             const previewCard = document.getElementById("previewCard");
             const renderSpinner = document.getElementById("renderSpinner");
             const renderStatusText = document.getElementById("renderStatusText");
@@ -411,13 +414,12 @@
             renderStatusText.style.color = "#f59e0b";
             renderStatusText.innerText = "Your video is rendering...";
             
-            // Reset views during render
             videoContainer.style.display = "none";
             resultVideo.src = "";
             placeholderBox.style.display = "block";
             previewIcon.innerText = "🎬";
             previewTitle.innerText = "Generating Your Video";
-            previewSubtitle.innerText = "Sending prompt to secure render queue...";
+            previewSubtitle.innerText = `Preparing ${aspect_ratio_label(aspectRatio)} format on cloud render node...`;
             document.getElementById("renderedPromptDisplay").innerText = `"${promptText}"`;
             downloadBtn.style.display = "none";
 
@@ -431,7 +433,10 @@
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ prompt: promptText })
+                    body: JSON.stringify({ 
+                        prompt: promptText,
+                        aspect_ratio: aspectRatio 
+                    })
                 });
 
                 const data = await response.json();
@@ -442,12 +447,10 @@
                     renderStatusText.innerText = "✓ Render Complete";
                     
                     if (data.video_url) {
-                        // Hide placeholder and show live HTML5 video player
                         placeholderBox.style.display = "none";
                         resultVideo.src = data.video_url;
                         videoContainer.style.display = "block";
 
-                        // Configure download button
                         downloadBtn.href = data.video_url;
                         downloadBtn.style.display = "block";
                     } else {
@@ -468,6 +471,12 @@
                 renderBtn.disabled = false;
                 renderBtn.innerText = "Generate Video";
             }
+        }
+
+        function aspect_ratio_label(ratio) {
+            if (ratio === "9:16") return "Vertical (Shorts/Reels)";
+            if (ratio === "16:9") return "Landscape (Long-form)";
+            return "Square";
         }
     </script>
 </body>
