@@ -7,7 +7,7 @@ import hashlib
 import os
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.5.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.6.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -22,7 +22,7 @@ SECRET_KEY = "your-secure-production-jwt-secret-key"
 LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
 USAGE_TRACKER = {}
-MAX_RENDERS_ALLOWED = 50
+MAX_RENDERS_ALLOWED = 100  # Increased for long-form creators
 
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
@@ -64,80 +64,89 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
     if current_usage >= MAX_RENDERS_ALLOWED:
         raise HTTPException(
             status_code=429, 
-            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} video renders max). Please top up your credits."
+            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} video clips max). Please top up your credits."
         )
 
-    prompt_text = data.get("prompt", "").strip()
-    video_format = data.get("video_format", "short_form") # short_form (9:16) or long_form (16:9)
+    scenes = data.get("scenes", [])
+    video_format = data.get("video_format", "long_form") # Default to long-form for 15+ min content
     duration = int(data.get("duration", 10))
     avatar = data.get("avatar", "none")
     enable_captions = data.get("enable_captions", True)
 
-    if not prompt_text:
-        raise HTTPException(status_code=400, detail="Prompt is required")
+    if not scenes or not isinstance(scenes, list):
+        # Fallback if single prompt string sent
+        single_prompt = data.get("prompt", "").strip()
+        if not single_prompt:
+            raise HTTPException(status_code=400, detail="Scene script or prompt is required")
+        scenes = [single_prompt]
 
     if not os.environ.get("FAL_KEY"):
         raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
 
     try:
-        aspect_ratio = "9:16" if video_format == "short_form" else "16:9"
-        
-        final_prompt = prompt_text
-        if avatar in AVATAR_PROMPTS:
-            final_prompt = AVATAR_PROMPTS[avatar] + prompt_text
+        aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
+        rendered_clips = []
 
-        # 1. Generate Video via Flux-3-Max
-        video_handler = fal_client.submit(
-            "blackforestlabs/flux-3-max/text-to-video",
-            arguments={
-                "prompt": final_prompt,
-                "aspect_ratio": aspect_ratio,
-                "duration": duration
-            }
-        )
-        video_result = video_handler.get()
-        raw_video_url = extract_media_url(video_result, ("video", "output"))
+        # Iterate through multi-scene script to build long-form content segment by segment
+        for scene_text in scenes[:10]: # Max 10 scenes per batch to manage runtime
+            final_prompt = scene_text.strip()
+            if avatar in AVATAR_PROMPTS:
+                final_prompt = AVATAR_PROMPTS[avatar] + final_prompt
 
-        if not raw_video_url:
-            raise HTTPException(status_code=500, detail="Video generated, but media URL could not be retrieved.")
+            video_handler = fal_client.submit(
+                "blackforestlabs/flux-3-max/text-to-video",
+                arguments={
+                    "prompt": final_prompt,
+                    "aspect_ratio": aspect_ratio,
+                    "duration": duration
+                }
+            )
+            video_result = video_handler.get()
+            raw_video_url = extract_media_url(video_result, ("video", "output"))
 
-        final_video_url = raw_video_url
+            if raw_video_url:
+                final_scene_url = raw_video_url
+                
+                # Optional auto-captioning per scene
+                if enable_captions:
+                    try:
+                        caption_handler = fal_client.submit(
+                            "fal-ai/workflow-utilities/auto-subtitle",
+                            arguments={
+                                "video_url": raw_video_url,
+                                "language": "en",
+                                "font_name": "Montserrat",
+                                "font_size": 90,
+                                "font_weight": "bold",
+                                "highlight_color": "purple",
+                                "position": "bottom"
+                            }
+                        )
+                        caption_result = caption_handler.get()
+                        captioned_url = extract_media_url(caption_result, ("video", "output"))
+                        if captioned_url:
+                            final_scene_url = captioned_url
+                    except Exception:
+                        pass
 
-        # 2. Automatically apply Karaoke Captions if enabled
-        if enable_captions:
-            try:
-                caption_handler = fal_client.submit(
-                    "fal-ai/workflow-utilities/auto-subtitle",
-                    arguments={
-                        "video_url": raw_video_url,
-                        "language": "en",
-                        "font_name": "Montserrat",
-                        "font_size": 90,
-                        "font_weight": "bold",
-                        "highlight_color": "purple",
-                        "position": "bottom"
-                    }
-                )
-                caption_result = caption_handler.get()
-                captioned_url = extract_media_url(caption_result, ("video", "output"))
-                if captioned_url:
-                    final_video_url = captioned_url
-            except Exception as cap_err:
-                # Fallback to raw video if subtitle processing fails
-                print(f"[Caption Warning] Subtitle generation skipped: {str(cap_err)}")
+                rendered_clips.append(final_scene_url)
+                current_usage += 1
+                USAGE_TRACKER[license_key] = current_usage
 
-        USAGE_TRACKER[license_key] = current_usage + 1
+        if not rendered_clips:
+            raise HTTPException(status_code=500, detail="Failed to generate any video clips for the script.")
 
         return {
             "status": "success",
-            "message": "Video generated and captioned successfully via Fal.ai",
+            "message": f"Successfully generated {len(rendered_clips)} sequential scenes for long-form video!",
             "videos_rendered": USAGE_TRACKER[license_key],
             "limit": MAX_RENDERS_ALLOWED,
-            "video_url": final_video_url
+            "video_urls": rendered_clips,
+            "video_url": rendered_clips[0] # Primary viewable clip
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Long-form rendering failed: {str(e)}")
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
