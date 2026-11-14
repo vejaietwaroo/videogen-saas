@@ -75,7 +75,8 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
             "message": "Video generated successfully via Fal.ai",
             "video_url": video_url,
             "request_payload": data
-        }
+        }       
+         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
 
