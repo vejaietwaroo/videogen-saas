@@ -7,7 +7,7 @@ import hashlib
 import os
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.3.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.4.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -20,6 +20,10 @@ def serve_frontend():
 security = HTTPBearer()
 SECRET_KEY = "your-secure-production-jwt-secret-key"
 LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
+
+# In-memory usage tracker to protect Fal.ai credits (Max 50 renders per license key)
+USAGE_TRACKER = {}
+MAX_RENDERS_ALLOWED = 50
 
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
@@ -55,6 +59,16 @@ def extract_media_url(result: dict, keys=("video", "audio", "output")):
 
 @app.post("/api/render")
 def secure_render(data: dict, user: dict = Depends(get_current_user)):
+    license_key = user.get("sub", "unknown_user")
+    
+    # Check usage cap / rate limiting
+    current_usage = USAGE_TRACKER.get(license_key, 0)
+    if current_usage >= MAX_RENDERS_ALLOWED:
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} video renders max). Please top up your credits."
+        )
+
     prompt_text = data.get("prompt", "").strip()
     aspect_ratio = data.get("aspect_ratio", "9:16")
     avatar = data.get("avatar", "none")
@@ -87,9 +101,14 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         if not current_video_url:
             raise HTTPException(status_code=500, detail="Video generated, but media URL could not be retrieved.")
 
+        # Increment usage count upon success
+        USAGE_TRACKER[license_key] = current_usage + 1
+
         return {
             "status": "success",
             "message": "Video generated successfully via Fal.ai",
+            "videos_rendered": USAGE_TRACKER[license_key],
+            "limit": MAX_RENDERS_ALLOWED,
             "video_url": current_video_url
         }
 
