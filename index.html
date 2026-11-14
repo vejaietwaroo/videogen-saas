@@ -133,7 +133,7 @@
             font-size: 0.8rem;
         }
 
-        input, select, textarea {
+        input[type="text"], select, textarea {
             width: 100%;
             background-color: #0b1120;
             border: 1px solid #334155;
@@ -147,7 +147,7 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus, textarea:focus {
+        input[type="text"]:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--accent-blue);
         }
@@ -164,6 +164,76 @@
 
         textarea.dialogue-box {
             min-height: 75px;
+        }
+
+        /* Optional Add-Ons Section */
+        .addons-panel {
+            background-color: #0b1120;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+
+        .addons-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .addons-title {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .addons-badge {
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            background: rgba(245, 158, 11, 0.12);
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .addons-body {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid #1e293b;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background-color: #111827;
+            border: 1px solid #283548;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .checkbox-label {
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .checkbox-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: auto;
         }
 
         button {
@@ -278,6 +348,9 @@
             display: inline-block;
             box-sizing: border-box;
             text-align: center;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
         }
 
         .btn-secondary:hover {
@@ -306,35 +379,71 @@
         <!-- Step 2: Video Creator Studio -->
         <div id="studioCard" class="card locked">
             <h2>Create New Video</h2>
-            <p class="subtitle">Configure your video dimensions, voiceover persona, and scene script.</p>
+            <p class="subtitle">Describe your visual scene and customize optional avatars, voiceovers, music, and captions.</p>
             
-            <div class="form-row">
-                <div>
-                    <label for="videoFormat">Video Format & Dimensions</label>
-                    <select id="videoFormat">
-                        <option value="9:16">YouTube Shorts / IG Reels (Vertical 9:16)</option>
-                        <option value="16:9">Long-Form / YouTube (Landscape 16:9)</option>
-                        <option value="1:1">Square Feed Post (1:1)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="voicePersona">Character Voice Persona</label>
-                    <select id="voicePersona">
-                        <option value="none">No Speech (Visuals / Ambient Only)</option>
-                        <option value="female_calm">Warm Female Guide</option>
-                        <option value="male_cinematic">Deep Cinematic Narrator</option>
-                        <option value="female_suspense">Suspenseful Thriller Voice</option>
-                        <option value="male_energetic">Energetic Social Host</option>
-                    </select>
-                </div>
-            </div>
+            <label for="videoFormat">Video Format & Dimensions</label>
+            <select id="videoFormat">
+                <option value="9:16">YouTube Shorts / IG Reels / TikTok (Vertical 9:16)</option>
+                <option value="16:9">Long-Form / YouTube / Cinematic (Landscape 16:9)</option>
+                <option value="1:1">Square Social Feed Post (1:1)</option>
+            </select>
 
             <label for="renderPrompt">Visual Scene Description</label>
-            <textarea id="renderPrompt" placeholder="Close-up cinematic shot of a detective standing under a flickering streetlamp in the rain, speaking into the camera, 4k moody lighting..."></textarea>
+            <textarea id="renderPrompt" placeholder="A serene vertical loop of a sunlit wooden studio at sunrise, golden light streaming through tall windows onto a dark yoga mat, 4k cinematic..."></textarea>
 
-            <label for="dialogueScript">Character Speech / Dialogue <span>(Optional)</span></label>
-            <textarea id="dialogueScript" class="dialogue-box" placeholder="Enter the exact words you want the character or narrator to speak..."></textarea>
+            <!-- Modular Optional Production Add-Ons -->
+            <div class="addons-panel">
+                <div class="addons-header" onclick="toggleAddons()">
+                    <span class="addons-title">✨ Production Add-Ons (Avatar, Speech, Music & Captions)</span>
+                    <span id="addonsToggleBadge" class="addons-badge">Optional • Show</span>
+                </div>
+
+                <div id="addonsBody" class="addons-body" style="display: none;">
+                    <div class="form-row">
+                        <div>
+                            <label for="avatarSelect">AI Talking Avatar <span>(Optional)</span></label>
+                            <select id="avatarSelect">
+                                <option value="none">None (Pure Scene Visuals)</option>
+                                <option value="female_presenter">Studio Female Presenter</option>
+                                <option value="male_presenter">Executive Male Presenter</option>
+                                <option value="wellness_coach">Mindfulness & Wellness Guide</option>
+                                <option value="noir_detective">Dramatic Thriller Character</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="voicePersona">Voiceover / Speech <span>(Optional)</span></label>
+                            <select id="voicePersona" onchange="toggleDialogueBox()">
+                                <option value="none">None (No Spoken Audio)</option>
+                                <option value="female_calm">Warm Female Guide</option>
+                                <option value="male_cinematic">Deep Cinematic Narrator</option>
+                                <option value="female_suspense">Suspenseful Thriller Voice</option>
+                                <option value="male_energetic">Energetic Social Host</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="dialogueWrapper" style="display: none;">
+                        <label for="dialogueScript">Spoken Dialogue / Narration Script</label>
+                        <textarea id="dialogueScript" class="dialogue-box" placeholder="Type the exact words you want spoken in this scene..."></textarea>
+                    </div>
+
+                    <label for="musicTrack">Background Music & Soundtrack <span>(Optional)</span></label>
+                    <select id="musicTrack">
+                        <option value="none">None (Silent / Natural Scene Audio)</option>
+                        <option value="cinematic_ambient">Cinematic Ambient & Atmospheric</option>
+                        <option value="calm_lofi">Calm Wellness & Lofi Beats</option>
+                        <option value="suspense_thriller">Dark Suspense & Mystery Pulse</option>
+                        <option value="upbeat_social">Upbeat Modern Social Energy</option>
+                    </select>
+
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="autoCaptions">
+                        <span class="checkbox-label">Burn Dynamic Auto-Captions</span>
+                        <span class="checkbox-sub">Recommended for Reels & Shorts</span>
+                    </label>
+                </div>
+            </div>
             
             <button id="renderBtn" onclick="triggerRender()">Generate Video</button>
             <div id="renderError" class="alert error"></div>
@@ -371,6 +480,23 @@
             : "https://videogen-saas.onrender.com";
 
         let authToken = null;
+
+        function toggleAddons() {
+            const body = document.getElementById("addonsBody");
+            const badge = document.getElementById("addonsToggleBadge");
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            badge.innerText = isHidden ? "Optional • Hide" : "Optional • Show";
+        }
+
+        function toggleDialogueBox() {
+            const voice = document.getElementById("voicePersona").value;
+            const avatar = document.getElementById("avatarSelect").value;
+            const wrapper = document.getElementById("dialogueWrapper");
+            wrapper.style.display = (voice !== "none" || avatar !== "none") ? "block" : "none";
+        }
+
+        document.getElementById("avatarSelect").addEventListener("change", toggleDialogueBox);
 
         async function verifyLicense() {
             const keyInput = document.getElementById("licenseKey").value.trim();
@@ -422,8 +548,12 @@
         async function triggerRender() {
             const promptText = document.getElementById("renderPrompt").value.trim();
             const aspectRatio = document.getElementById("videoFormat").value;
+            const avatar = document.getElementById("avatarSelect").value;
             const voicePersona = document.getElementById("voicePersona").value;
             const dialogueText = document.getElementById("dialogueScript").value.trim();
+            const musicTrack = document.getElementById("musicTrack").value;
+            const autoCaptions = document.getElementById("autoCaptions").checked;
+
             const renderBtn = document.getElementById("renderBtn");
             const renderError = document.getElementById("renderError");
 
@@ -462,9 +592,7 @@
             placeholderBox.style.display = "block";
             previewIcon.innerText = "🎬";
             previewTitle.innerText = "Generating Your Video";
-            previewSubtitle.innerText = dialogueText 
-                ? "Synthesizing character speech and syncing video frames..." 
-                : `Preparing ${aspect_ratio_label(aspectRatio)} format on cloud render node...`;
+            previewSubtitle.innerText = `Preparing ${aspect_ratio_label(aspectRatio)} render with selected studio options...`;
             document.getElementById("renderedPromptDisplay").innerText = `"${promptText}"`;
             downloadBtn.style.display = "none";
 
@@ -481,8 +609,11 @@
                     body: JSON.stringify({ 
                         prompt: promptText,
                         aspect_ratio: aspectRatio,
+                        avatar: avatar,
                         voice: voicePersona,
-                        dialogue: dialogueText
+                        dialogue: dialogueText,
+                        music: musicTrack,
+                        captions: autoCaptions
                     })
                 });
 
