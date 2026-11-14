@@ -12,7 +12,7 @@
         <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">VideoGen Studio</h1>
-                <p class="text-sm text-slate-400">Cinematic AI Video Generation Platform</p>
+                <p class="text-sm text-slate-400">Cinematic AI Video Generation & Auto-Captions Platform</p>
             </div>
             <div id="auth-status" class="text-xs px-3 py-1.5 rounded-full bg-red-950/80 text-red-300 border border-red-800">
                 License Inactive
@@ -30,28 +30,38 @@
             <p id="license-msg" class="text-xs mt-2 text-red-400 hidden"></p>
         </div>
 
-        <!-- Studio Generator Workspace (Hidden until activated) -->
+        <!-- Studio Generator Workspace -->
         <div id="studio-workspace" class="space-y-6 opacity-40 pointer-events-none transition-opacity duration-300">
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Video Parameters</h2>
+                    <h2 class="text-lg font-semibold">Video Parameters & Formats</h2>
                     <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Usage: 0 / 50</span>
                 </div>
 
                 <!-- Prompt Input -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Scene Description</label>
-                    <textarea id="prompt-input" rows="3" placeholder="Describe your cinematic scene in detail..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Scene Description & Narration Script</label>
+                    <textarea id="prompt-input" rows="3" placeholder="Describe your cinematic scene and what is spoken..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500"></textarea>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <!-- Aspect Ratio -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Video Type (Shorts vs Long-form) -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Aspect Ratio</label>
-                        <select id="aspect-ratio" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="9:16">9:16 (Vertical / Reels / TikTok)</option>
-                            <option value="16:9">16:9 (Horizontal / YouTube)</option>
-                            <option value="1:1">1:1 (Square)</option>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Video Type / Length</label>
+                        <select id="video-format" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="short_form">Short-Form (9:16 Vertical / TikTok / Reels)</option>
+                            <option value="long_form">Long-Form (16:9 Horizontal / YouTube)</option>
+                        </select>
+                    </div>
+
+                    <!-- Clip Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Duration (Seconds)</label>
+                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="5">5 Seconds</option>
+                            <option value="10" selected>10 Seconds (Recommended)</option>
+                            <option value="15">15 Seconds</option>
+                            <option value="20">20 Seconds (Max)</option>
                         </select>
                     </div>
 
@@ -68,9 +78,15 @@
                     </div>
                 </div>
 
+                <!-- Auto-Captions Toggle -->
+                <div class="flex items-center gap-2 mb-6 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                    <input type="checkbox" id="enable-captions" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer">
+                    <label for="enable-captions" class="text-sm text-slate-300 cursor-pointer">Enable Burn-in Auto-Captions (Karaoke Style)</label>
+                </div>
+
                 <!-- Generate Button -->
                 <button id="generate-btn" onclick="generateVideo()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-lg text-sm shadow-md transition-all cursor-pointer flex justify-center items-center gap-2">
-                    <span>Generate Cinematic Video</span>
+                    <span>Generate Video & Captions</span>
                 </button>
             </div>
 
@@ -140,8 +156,11 @@
 
         async function generateVideo() {
             const prompt = document.getElementById("prompt-input").value.trim();
-            const aspect_ratio = document.getElementById("aspect-ratio").value;
+            const video_format = document.getElementById("video-format").value;
+            const duration = document.getElementById("video-duration").value;
             const avatar = document.getElementById("avatar-select").value;
+            const enable_captions = document.getElementById("enable-captions").checked;
+            
             const btn = document.getElementById("generate-btn");
             const outputSec = document.getElementById("output-section");
             const resultContainer = document.getElementById("result-container");
@@ -152,10 +171,10 @@
             }
 
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Rendering Video (~30s)...`;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Rendering Video & Burning Captions (~45s)...`;
             
             outputSec.classList.remove("hidden");
-            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Synthesizing cinematic visuals via Fal.ai...</p></div>`;
+            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Synthesizing visuals and generating karaoke subtitles...</p></div>`;
 
             try {
                 const res = await fetch("/api/render", {
@@ -164,7 +183,7 @@
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ prompt, aspect_ratio, avatar })
+                    body: JSON.stringify({ prompt, video_format, duration, avatar, enable_captions })
                 });
 
                 const data = await res.json();
@@ -176,7 +195,7 @@
                             <source src="${data.video_url}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
-                        <a href="${data.video_url}" target="_blank" download class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg transition-colors">Download Video File</a>
+                        <a href="${data.video_url}" target="_blank" download class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg transition-colors">Download Captioned Video File</a>
                     `;
                 } else {
                     resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Error: ${data.detail || "Rendering failed."}</p>`;
@@ -185,7 +204,7 @@
                 resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Network error during render process.</p>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<span>Generate Cinematic Video</span>`;
+                btn.innerHTML = `<span>Generate Video & Captions</span>`;
             }
         }
     </script>
