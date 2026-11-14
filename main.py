@@ -38,7 +38,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
 
 # Maps frontend selections to Fal.ai parameters
-# Maps frontend selections to Fal.ai parameters
 AVATAR_PROMPTS = {
     "female_presenter": "Cinematic shot of a female presenter performing active physical movements and demonstrating a routine while turning to speak directly to the camera, talking and gesturing naturally, 4k, ",
     "male_presenter": "Cinematic shot of a male presenter performing active physical movements and demonstrating a routine while turning to speak directly to the camera, talking and gesturing naturally, 4k, ",
