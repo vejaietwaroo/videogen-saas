@@ -1,17 +1,13 @@
-from fastapi import FastAPI, HTTPException, Security, Depends, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 import hmac
 import hashlib
 import os
-import uuid
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.0.0")
-
-# In-memory job tracker for asynchronous rendering
-JOBS = {}
+app = FastAPI(title="VideoGen SaaS API", version="4.1.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -71,7 +67,8 @@ def extract_media_url(result: dict, keys=("video", "audio", "output")):
                 return val
     return None
 
-def process_render_job(job_id: str, data: dict):
+@app.post("/api/render")
+def secure_render(data: dict, user: dict = Depends(get_current_user)):
     prompt_text = data.get("prompt", "").strip()
     aspect_ratio = data.get("aspect_ratio", "9:16")
     avatar = data.get("avatar", "none")
@@ -80,8 +77,14 @@ def process_render_job(job_id: str, data: dict):
     music = data.get("music", "none")
     captions = bool(data.get("captions", False))
 
+    if not prompt_text:
+        raise HTTPException(status_code=400, detail="Prompt is required")
+
+    if not os.environ.get("FAL_KEY"):
+        raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
+
     try:
-        JOBS[job_id]["step"] = "Generating base visual scene..."
+        # Step 1: Base Video Generation
         final_prompt = prompt_text
         if avatar in AVATAR_PROMPTS:
             final_prompt = AVATAR_PROMPTS[avatar] + prompt_text
@@ -100,13 +103,10 @@ def process_render_job(job_id: str, data: dict):
         current_video_url = extract_media_url(video_result, ("video", "output"))
 
         if not current_video_url:
-            JOBS[job_id]["status"] = "failed"
-            JOBS[job_id]["error"] = "Base video generated, but media URL could not be retrieved."
-            return
+            raise HTTPException(status_code=500, detail="Base video generated, but media URL could not be retrieved.")
 
         # Step 2: Optional Speech Synthesis + Lip-Sync
         if dialogue and (voice != "none" or avatar != "none"):
-            JOBS[job_id]["step"] = "Synthesizing voiceover & syncing character lips..."
             selected_voice = VOICE_MAP.get(voice, "af_sarah")
             tts_handler = fal_client.submit(
                 "fal-ai/kokoro/american-english",
@@ -133,7 +133,6 @@ def process_render_job(job_id: str, data: dict):
 
         # Step 3: Optional Background Music
         if music in MUSIC_PROMPTS:
-            JOBS[job_id]["step"] = "Composing and mixing background soundtrack..."
             music_handler = fal_client.submit(
                 "fal-ai/stable-audio",
                 arguments={
@@ -159,7 +158,6 @@ def process_render_job(job_id: str, data: dict):
 
         # Step 4: Optional Auto-Captions Burn-In
         if captions and dialogue:
-            JOBS[job_id]["step"] = "Burning dynamic social captions..."
             caption_handler = fal_client.submit(
                 "fal-ai/auto-caption",
                 arguments={
@@ -174,40 +172,14 @@ def process_render_job(job_id: str, data: dict):
             if captioned_url:
                 current_video_url = captioned_url
 
-        JOBS[job_id]["status"] = "completed"
-        JOBS[job_id]["video_url"] = current_video_url
-        JOBS[job_id]["step"] = "Render complete!"
+        return {
+            "status": "success",
+            "message": "Video generated successfully via Fal.ai",
+            "video_url": current_video_url
+        }
 
     except Exception as e:
-        JOBS[job_id]["status"] = "failed"
-        JOBS[job_id]["error"] = f"Fal.ai rendering failed: {str(e)}"
-
-@app.post("/api/render")
-def secure_render(data: dict, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
-    prompt_text = data.get("prompt", "").strip()
-    if not prompt_text:
-        raise HTTPException(status_code=400, detail="Prompt is required")
-
-    if not os.environ.get("FAL_KEY"):
-        raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
-
-    job_id = str(uuid.uuid4())
-    JOBS[job_id] = {
-        "status": "processing",
-        "step": "Initializing cloud render node...",
-        "video_url": None,
-        "error": None
-    }
-
-    background_tasks.add_task(process_render_job, job_id, data)
-    return {"status": "queued", "job_id": job_id}
-
-@app.get("/api/status/{job_id}")
-def get_job_status(job_id: str, user: dict = Depends(get_current_user)):
-    job = JOBS.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Render job not found")
-    return job
+        raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
