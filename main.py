@@ -38,11 +38,12 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
 
 # Maps frontend selections to Fal.ai parameters
+# Maps frontend selections to Fal.ai parameters
 AVATAR_PROMPTS = {
-    "female_presenter": "Close-up portrait of a confident, warm female studio presenter looking directly at the camera and speaking naturally, soft key lighting, 4k cinematic, ",
-    "male_presenter": "Close-up portrait of a sharp, professional male executive presenter looking at the camera and speaking clearly, modern studio background, 4k cinematic, ",
-    "wellness_coach": "Serene close-up portrait of a calm mindfulness and yoga guide speaking gently to the camera in a sunlit wooden studio, warm natural light, 4k, ",
-    "noir_detective": "Moody close-up cinematic shot of a dramatic thriller character speaking intensely to the camera in dim atmospheric lighting, 4k, "
+    "female_presenter": "Cinematic shot of a female presenter performing active physical movements and demonstrating a routine while turning to speak directly to the camera, talking and gesturing naturally, 4k, ",
+    "male_presenter": "Cinematic shot of a male presenter performing active physical movements and demonstrating a routine while turning to speak directly to the camera, talking and gesturing naturally, 4k, ",
+    "wellness_coach": "Cinematic shot of a wellness guide demonstrating active Tai Chi and stretching movements on her yoga mat, turning to look directly at the audience with natural facial expressions and mouth movement while instructing everyone, 4k, ",
+    "noir_detective": "Cinematic shot of a thriller character moving dynamically in a dramatic environment while turning to speak directly to the camera, intense action and facial expression, 4k, "
 }
 
 VOICE_MAP = {
