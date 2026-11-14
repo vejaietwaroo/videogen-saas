@@ -13,8 +13,9 @@ app = FastAPI(title="VideoGen SaaS API", version="4.1.0")
 def serve_frontend():
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(html_path):
-        return FileResponse(html_path)
-    return {"error": "index.html not found in backend folder"}
+        with open(html_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>Error: index.html not found</h1>"
 
 security = HTTPBearer()
 
