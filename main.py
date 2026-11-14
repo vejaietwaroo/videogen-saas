@@ -5,9 +5,34 @@ import jwt
 import hmac
 import hashlib
 import os
+import sqlite3
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.7.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.8.0")
+
+# --- DATABASE SETUP ---
+DB_FILE = "videogen_saas.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS licenses (
+            license_key TEXT PRIMARY KEY,
+            tier TEXT,
+            renders_used INTEGER DEFAULT 0,
+            max_renders INTEGER DEFAULT 100
+        )
+    """)
+    # Insert default VIP license if it doesn't exist
+    cursor.execute("""
+        INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders)
+        VALUES ('LTD-VIP-2026', 'lifetime', 0, 100)
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -21,15 +46,26 @@ security = HTTPBearer()
 SECRET_KEY = "your-secure-production-jwt-secret-key"
 LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
-USAGE_TRACKER = {}
-MAX_RENDERS_ALLOWED = 100
-
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
-    license_key = payload.get("license_key")
-    if license_key == "LTD-VIP-2026":
-        token = jwt.encode({"sub": license_key, "tier": "lifetime"}, SECRET_KEY, algorithm="HS256")
-        return {"status": "success", "access_token": token}
+    license_key = payload.get("license_key", "").strip()
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT tier, renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        tier, used, max_r = row
+        token = jwt.encode({"sub": license_key, "tier": tier}, SECRET_KEY, algorithm="HS256")
+        return {
+            "status": "success", 
+            "access_token": token,
+            "renders_used": used,
+            "max_renders": max_r
+        }
+    
     raise HTTPException(status_code=403, detail="Invalid license key")
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
@@ -60,11 +96,22 @@ def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_fil
 def secure_render(data: dict, user: dict = Depends(get_current_user)):
     license_key = user.get("sub", "unknown_user")
     
-    current_usage = USAGE_TRACKER.get(license_key, 0)
-    if current_usage >= MAX_RENDERS_ALLOWED:
+    # Check database for usage limits
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=403, detail="License not found in database.")
+    
+    current_usage, max_renders = row
+    if current_usage >= max_renders:
+        conn.close()
         raise HTTPException(
             status_code=429, 
-            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} clips max). Please top up your credits."
+            detail=f"Usage limit reached ({max_renders} video clips max). Please top up your credits."
         )
 
     scenes = data.get("scenes", [])
@@ -78,22 +125,24 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
     if not scenes or not isinstance(scenes, list):
         single_prompt = data.get("prompt", "").strip()
         if not single_prompt:
+            conn.close()
             raise HTTPException(status_code=400, detail="Scene script or prompt is required")
         scenes = [single_prompt]
 
     if not os.environ.get("FAL_KEY"):
+        conn.close()
         raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
 
     try:
         aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
         rendered_clips = []
+        clips_to_add = len(scenes[:10])
 
         for scene_text in scenes[:10]:
             final_prompt = scene_text.strip()
             if avatar in AVATAR_PROMPTS:
                 final_prompt = AVATAR_PROMPTS[avatar] + final_prompt
 
-            # 1. Generate Video Clip via Flux-3-Max
             video_handler = fal_client.submit(
                 "blackforestlabs/flux-3-max/text-to-video",
                 arguments={
@@ -108,7 +157,6 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
             if raw_video_url:
                 final_scene_url = raw_video_url
                 
-                # 2. Optional Auto-Captions Burn-in
                 if enable_captions:
                     try:
                         caption_handler = fal_client.submit(
@@ -131,17 +179,22 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
                         pass
 
                 rendered_clips.append(final_scene_url)
-                current_usage += 1
-                USAGE_TRACKER[license_key] = current_usage
 
         if not rendered_clips:
+            conn.close()
             raise HTTPException(status_code=500, detail="Failed to generate video clips.")
+
+        # Update persistent database usage count
+        new_usage = current_usage + len(rendered_clips)
+        cursor.execute("UPDATE licenses SET renders_used = ? WHERE license_key = ?", (new_usage, license_key))
+        conn.commit()
+        conn.close()
 
         return {
             "status": "success",
-            "message": f"Successfully generated {len(rendered_clips)} multimedia scenes with voice and music specs!",
-            "videos_rendered": USAGE_TRACKER[license_key],
-            "limit": MAX_RENDERS_ALLOWED,
+            "message": f"Successfully generated {len(rendered_clips)} multimedia scenes!",
+            "videos_rendered": new_usage,
+            "limit": max_renders,
             "video_urls": rendered_clips,
             "video_url": rendered_clips[0],
             "active_voice": voice_persona,
@@ -149,6 +202,7 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         }
 
     except Exception as e:
+        conn.close()
         raise HTTPException(status_code=500, detail=f"Multimedia rendering failed: {str(e)}")
 
 @app.post("/api/webhook/lemonsqueezy")
@@ -174,6 +228,18 @@ async def lemonsqueezy_webhook(request: Request):
         customer_email = attributes.get("user_email")
         order_id = attributes.get("identifier")
         total_price = attributes.get("total_formatted")
-        print(f"[Licensing Success] Order {order_id} ({total_price}) processed for {customer_email}")
+        
+        # Automatically generate and store a new license key upon purchase
+        new_key = f"VIP-{order_id[:8].upper()}-2026"
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders)
+            VALUES (?, 'lifetime', 0, 100)
+        """, (new_key,))
+        conn.commit()
+        conn.close()
+        
+        print(f"[Licensing Success] Order {order_id} processed for {customer_email}. Generated key: {new_key}")
         
     return {"status": "received", "event": event_name}
