@@ -7,7 +7,7 @@ import hashlib
 import os
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.4.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.5.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -21,7 +21,6 @@ security = HTTPBearer()
 SECRET_KEY = "your-secure-production-jwt-secret-key"
 LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
-# In-memory usage tracker to protect Fal.ai credits (Max 50 renders per license key)
 USAGE_TRACKER = {}
 MAX_RENDERS_ALLOWED = 50
 
@@ -61,7 +60,6 @@ def extract_media_url(result: dict, keys=("video", "audio", "output")):
 def secure_render(data: dict, user: dict = Depends(get_current_user)):
     license_key = user.get("sub", "unknown_user")
     
-    # Check usage cap / rate limiting
     current_usage = USAGE_TRACKER.get(license_key, 0)
     if current_usage >= MAX_RENDERS_ALLOWED:
         raise HTTPException(
@@ -70,9 +68,10 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         )
 
     prompt_text = data.get("prompt", "").strip()
-    aspect_ratio = data.get("aspect_ratio", "9:16")
+    video_format = data.get("video_format", "short_form") # short_form (9:16) or long_form (16:9)
+    duration = int(data.get("duration", 10))
     avatar = data.get("avatar", "none")
-    dialogue = data.get("dialogue", "").strip()
+    enable_captions = data.get("enable_captions", True)
 
     if not prompt_text:
         raise HTTPException(status_code=400, detail="Prompt is required")
@@ -81,35 +80,60 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="FAL_KEY environment variable is not configured on server.")
 
     try:
+        aspect_ratio = "9:16" if video_format == "short_form" else "16:9"
+        
         final_prompt = prompt_text
         if avatar in AVATAR_PROMPTS:
             final_prompt = AVATAR_PROMPTS[avatar] + prompt_text
-        elif dialogue:
-            final_prompt = "Cinematic shot of a person standing in their environment, turning to speak directly to the camera, " + prompt_text
 
+        # 1. Generate Video via Flux-3-Max
         video_handler = fal_client.submit(
             "blackforestlabs/flux-3-max/text-to-video",
             arguments={
                 "prompt": final_prompt,
                 "aspect_ratio": aspect_ratio,
-                "duration": 10
+                "duration": duration
             }
         )
         video_result = video_handler.get()
-        current_video_url = extract_media_url(video_result, ("video", "output"))
+        raw_video_url = extract_media_url(video_result, ("video", "output"))
 
-        if not current_video_url:
+        if not raw_video_url:
             raise HTTPException(status_code=500, detail="Video generated, but media URL could not be retrieved.")
 
-        # Increment usage count upon success
+        final_video_url = raw_video_url
+
+        # 2. Automatically apply Karaoke Captions if enabled
+        if enable_captions:
+            try:
+                caption_handler = fal_client.submit(
+                    "fal-ai/workflow-utilities/auto-subtitle",
+                    arguments={
+                        "video_url": raw_video_url,
+                        "language": "en",
+                        "font_name": "Montserrat",
+                        "font_size": 90,
+                        "font_weight": "bold",
+                        "highlight_color": "purple",
+                        "position": "bottom"
+                    }
+                )
+                caption_result = caption_handler.get()
+                captioned_url = extract_media_url(caption_result, ("video", "output"))
+                if captioned_url:
+                    final_video_url = captioned_url
+            except Exception as cap_err:
+                # Fallback to raw video if subtitle processing fails
+                print(f"[Caption Warning] Subtitle generation skipped: {str(cap_err)}")
+
         USAGE_TRACKER[license_key] = current_usage + 1
 
         return {
             "status": "success",
-            "message": "Video generated successfully via Fal.ai",
+            "message": "Video generated and captioned successfully via Fal.ai",
             "videos_rendered": USAGE_TRACKER[license_key],
             "limit": MAX_RENDERS_ALLOWED,
-            "video_url": current_video_url
+            "video_url": final_video_url
         }
 
     except Exception as e:
