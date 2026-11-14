@@ -106,12 +106,31 @@
             margin-bottom: 20px;
         }
 
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 560px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
             color: #cbd5e1;
             font-size: 0.88rem;
             font-weight: 500;
+        }
+
+        label span {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.8rem;
         }
 
         input, select, textarea {
@@ -139,8 +158,12 @@
 
         textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 95px;
             line-height: 1.5;
+        }
+
+        textarea.dialogue-box {
+            min-height: 75px;
         }
 
         button {
@@ -283,17 +306,35 @@
         <!-- Step 2: Video Creator Studio -->
         <div id="studioCard" class="card locked">
             <h2>Create New Video</h2>
-            <p class="subtitle">Select your target video format and describe your scene.</p>
+            <p class="subtitle">Configure your video dimensions, voiceover persona, and scene script.</p>
             
-            <label for="videoFormat">Video Format & Dimensions</label>
-            <select id="videoFormat">
-                <option value="9:16">YouTube Shorts / IG Reels / TikTok (Vertical 9:16)</option>
-                <option value="16:9">Long-Form / Cinematic / YouTube (Landscape 16:9)</option>
-                <option value="1:1">Square Feed Post (1:1)</option>
-            </select>
+            <div class="form-row">
+                <div>
+                    <label for="videoFormat">Video Format & Dimensions</label>
+                    <select id="videoFormat">
+                        <option value="9:16">YouTube Shorts / IG Reels (Vertical 9:16)</option>
+                        <option value="16:9">Long-Form / YouTube (Landscape 16:9)</option>
+                        <option value="1:1">Square Feed Post (1:1)</option>
+                    </select>
+                </div>
 
-            <label for="renderPrompt">Scene Description</label>
-            <textarea id="renderPrompt" placeholder="A serene vertical loop of a sunlit wooden studio at sunrise, golden light streaming through tall windows..."></textarea>
+                <div>
+                    <label for="voicePersona">Character Voice Persona</label>
+                    <select id="voicePersona">
+                        <option value="none">No Speech (Visuals / Ambient Only)</option>
+                        <option value="female_calm">Warm Female Guide</option>
+                        <option value="male_cinematic">Deep Cinematic Narrator</option>
+                        <option value="female_suspense">Suspenseful Thriller Voice</option>
+                        <option value="male_energetic">Energetic Social Host</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="renderPrompt">Visual Scene Description</label>
+            <textarea id="renderPrompt" placeholder="Close-up cinematic shot of a detective standing under a flickering streetlamp in the rain, speaking into the camera, 4k moody lighting..."></textarea>
+
+            <label for="dialogueScript">Character Speech / Dialogue <span>(Optional)</span></label>
+            <textarea id="dialogueScript" class="dialogue-box" placeholder="Enter the exact words you want the character or narrator to speak..."></textarea>
             
             <button id="renderBtn" onclick="triggerRender()">Generate Video</button>
             <div id="renderError" class="alert error"></div>
@@ -381,6 +422,8 @@
         async function triggerRender() {
             const promptText = document.getElementById("renderPrompt").value.trim();
             const aspectRatio = document.getElementById("videoFormat").value;
+            const voicePersona = document.getElementById("voicePersona").value;
+            const dialogueText = document.getElementById("dialogueScript").value.trim();
             const renderBtn = document.getElementById("renderBtn");
             const renderError = document.getElementById("renderError");
 
@@ -393,7 +436,7 @@
             }
 
             if (!promptText) {
-                renderError.innerText = "Please describe the video scene you want to generate.";
+                renderError.innerText = "Please describe the visual scene you want to generate.";
                 renderError.style.display = "block";
                 return;
             }
@@ -419,7 +462,9 @@
             placeholderBox.style.display = "block";
             previewIcon.innerText = "🎬";
             previewTitle.innerText = "Generating Your Video";
-            previewSubtitle.innerText = `Preparing ${aspect_ratio_label(aspectRatio)} format on cloud render node...`;
+            previewSubtitle.innerText = dialogueText 
+                ? "Synthesizing character speech and syncing video frames..." 
+                : `Preparing ${aspect_ratio_label(aspectRatio)} format on cloud render node...`;
             document.getElementById("renderedPromptDisplay").innerText = `"${promptText}"`;
             downloadBtn.style.display = "none";
 
@@ -435,7 +480,9 @@
                     },
                     body: JSON.stringify({ 
                         prompt: promptText,
-                        aspect_ratio: aspectRatio 
+                        aspect_ratio: aspectRatio,
+                        voice: voicePersona,
+                        dialogue: dialogueText
                     })
                 });
 
