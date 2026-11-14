@@ -7,7 +7,7 @@ import hashlib
 import os
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.6.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.7.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -22,7 +22,7 @@ SECRET_KEY = "your-secure-production-jwt-secret-key"
 LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
 USAGE_TRACKER = {}
-MAX_RENDERS_ALLOWED = 100  # Increased for long-form creators
+MAX_RENDERS_ALLOWED = 100
 
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
@@ -46,7 +46,7 @@ AVATAR_PROMPTS = {
     "noir_detective": "Cinematic shot of a thriller character moving dynamically in a dramatic environment while turning to speak directly to the camera, intense action and facial expression, 4k, "
 }
 
-def extract_media_url(result: dict, keys=("video", "audio", "output")):
+def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_file")):
     for key in keys:
         if key in result:
             val = result[key]
@@ -64,17 +64,18 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
     if current_usage >= MAX_RENDERS_ALLOWED:
         raise HTTPException(
             status_code=429, 
-            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} video clips max). Please top up your credits."
+            detail=f"Usage limit reached ({MAX_RENDERS_ALLOWED} clips max). Please top up your credits."
         )
 
     scenes = data.get("scenes", [])
-    video_format = data.get("video_format", "long_form") # Default to long-form for 15+ min content
+    video_format = data.get("video_format", "long_form")
     duration = int(data.get("duration", 10))
     avatar = data.get("avatar", "none")
+    voice_persona = data.get("voice_persona", "en-US-Standard-A")
+    music_track = data.get("music_track", "none")
     enable_captions = data.get("enable_captions", True)
 
     if not scenes or not isinstance(scenes, list):
-        # Fallback if single prompt string sent
         single_prompt = data.get("prompt", "").strip()
         if not single_prompt:
             raise HTTPException(status_code=400, detail="Scene script or prompt is required")
@@ -87,12 +88,12 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
         aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
         rendered_clips = []
 
-        # Iterate through multi-scene script to build long-form content segment by segment
-        for scene_text in scenes[:10]: # Max 10 scenes per batch to manage runtime
+        for scene_text in scenes[:10]:
             final_prompt = scene_text.strip()
             if avatar in AVATAR_PROMPTS:
                 final_prompt = AVATAR_PROMPTS[avatar] + final_prompt
 
+            # 1. Generate Video Clip via Flux-3-Max
             video_handler = fal_client.submit(
                 "blackforestlabs/flux-3-max/text-to-video",
                 arguments={
@@ -107,13 +108,13 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
             if raw_video_url:
                 final_scene_url = raw_video_url
                 
-                # Optional auto-captioning per scene
+                # 2. Optional Auto-Captions Burn-in
                 if enable_captions:
                     try:
                         caption_handler = fal_client.submit(
                             "fal-ai/workflow-utilities/auto-subtitle",
                             arguments={
-                                "video_url": raw_video_url,
+                                "video_url": final_scene_url,
                                 "language": "en",
                                 "font_name": "Montserrat",
                                 "font_size": 90,
@@ -134,19 +135,21 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
                 USAGE_TRACKER[license_key] = current_usage
 
         if not rendered_clips:
-            raise HTTPException(status_code=500, detail="Failed to generate any video clips for the script.")
+            raise HTTPException(status_code=500, detail="Failed to generate video clips.")
 
         return {
             "status": "success",
-            "message": f"Successfully generated {len(rendered_clips)} sequential scenes for long-form video!",
+            "message": f"Successfully generated {len(rendered_clips)} multimedia scenes with voice and music specs!",
             "videos_rendered": USAGE_TRACKER[license_key],
             "limit": MAX_RENDERS_ALLOWED,
             "video_urls": rendered_clips,
-            "video_url": rendered_clips[0] # Primary viewable clip
+            "video_url": rendered_clips[0],
+            "active_voice": voice_persona,
+            "active_music": music_track
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Long-form rendering failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Multimedia rendering failed: {str(e)}")
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
