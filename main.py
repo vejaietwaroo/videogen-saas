@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException, Security, Depends, Reques
+from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+import hmac
+import hashlib
 import os
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="4.2.0")
+app = FastAPI(title="VideoGen SaaS API", version="4.3.0")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
@@ -17,6 +19,7 @@ def serve_frontend():
 
 security = HTTPBearer()
 SECRET_KEY = "your-secure-production-jwt-secret-key"
+LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
@@ -92,3 +95,30 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fal.ai rendering failed: {str(e)}")
+
+@app.post("/api/webhook/lemonsqueezy")
+async def lemonsqueezy_webhook(request: Request):
+    body_bytes = await request.body()
+    signature = request.headers.get("X-Signature", "")
+    
+    computed_sig = hmac.new(
+        LEMON_SQUEEZY_SIGNING_SECRET.encode("utf-8"),
+        body_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    
+    if not hmac.compare_digest(computed_sig, signature):
+        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+        
+    event = await request.json()
+    event_name = event.get("meta", {}).get("event_name")
+    
+    if event_name == "order_created":
+        data = event.get("data", {})
+        attributes = data.get("attributes", {})
+        customer_email = attributes.get("user_email")
+        order_id = attributes.get("identifier")
+        total_price = attributes.get("total_formatted")
+        print(f"[Licensing Success] Order {order_id} ({total_price}) processed for {customer_email}")
+        
+    return {"status": "received", "event": event_name}
