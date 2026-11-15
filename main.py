@@ -12,7 +12,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.5.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.6.0")
 
 DB_FILE = "videogen_saas.db"
 
@@ -85,14 +85,17 @@ MODEL_ENDPOINTS = {
     "flagship": "blackforestlabs/flux-3-max/text-to-video"
 }
 
-def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_file", "file")):
-    for key in keys:
-        if key in result:
-            val = result[key]
-            if isinstance(val, dict) and "url" in val:
+def extract_media_url(result: dict):
+    """Safely extracts video URL from various Fal.ai response structures."""
+    if not isinstance(result, dict):
+        return None
+    for key in ("video", "output", "file", "url", "multimedia"):
+        val = result.get(key)
+        if isinstance(val, dict):
+            if "url" in val:
                 return val["url"]
-            if isinstance(val, str) and val.startswith("http"):
-                return val
+        elif isinstance(val, str) and val.startswith("http"):
+            return val
     return None
 
 def process_render_job(job_id: str, license_key: str, active_api_key: str, using_byok: bool, current_usage: int, max_renders: int, data: dict):
@@ -100,12 +103,12 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
         scenes = data.get("scenes", [])
         video_format = data.get("video_format", "long_form")
         model_tier = data.get("model_tier", "economy")
-        duration = int(data.get("duration", 5))
         avatar = data.get("avatar", "none")
-        enable_captions = data.get("enable_captions", True)
 
         client = fal_client.SyncClient(key=active_api_key)
         selected_endpoint = MODEL_ENDPOINTS.get(model_tier, MODEL_ENDPOINTS["economy"])
+        
+        # Wan 2.7 uses 'aspect_ratio' string directly
         aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
         rendered_clips = []
         total_scenes = len(scenes[:10])
@@ -120,36 +123,23 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
             if avatar in AVATAR_PROMPTS:
                 clean_prompt = AVATAR_PROMPTS[avatar] + clean_prompt
 
-            if model_tier == "economy":
-                args = {"prompt": clean_prompt, "aspect_ratio": aspect_ratio, "resolution": "720p"}
-            else:
-                args = {"prompt": clean_prompt, "aspect_ratio": aspect_ratio, "duration": duration}
+            # Clean payload specific to Wan 2.7 / Flux endpoints
+            arguments = {
+                "prompt": clean_prompt,
+                "aspect_ratio": aspect_ratio
+            }
 
-            video_result = client.run(selected_endpoint, arguments=args)
-            raw_video_url = extract_media_url(video_result, ("video", "output"))
+            video_result = client.run(selected_endpoint, arguments=arguments)
+            raw_video_url = extract_media_url(video_result)
 
-            if raw_video_url:
-                final_scene_url = raw_video_url
-                
-                # Optional captioning step wrapped safely so it never crashes a render
-                if enable_captions:
-                    RENDER_JOBS[job_id]["progress"] = f"Processing Subtitles on Scene {idx + 1} of {total_scenes}..."
-                    try:
-                        caption_result = client.run(
-                            "fal-ai/workflow-utilities/auto-subtitle",
-                            arguments={"video_url": final_scene_url, "language": "en"}
-                        )
-                        captioned_url = extract_media_url(caption_result, ("video", "output"))
-                        if captioned_url:
-                            final_scene_url = captioned_url
-                    except Exception:
-                        pass # Silently fallback to raw video if subtitle service fails
+            if not raw_video_url:
+                raise Exception(f"Fal.ai returned success but no downloadable video URL for Scene {idx + 1}. Response: {str(video_result)}")
 
-                rendered_clips.append(final_scene_url)
+            rendered_clips.append(raw_video_url)
 
         if not rendered_clips:
             RENDER_JOBS[job_id]["status"] = "failed"
-            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Verify your API key balance and prompt text."
+            RENDER_JOBS[job_id]["error"] = "No video clips were successfully generated."
             return
 
         new_usage = current_usage if using_byok else (current_usage + len(rendered_clips))
