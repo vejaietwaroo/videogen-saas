@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Security, Depends, Request
+from fastapi import FastAPI, HTTPException, Security, Depends, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 import hmac
 import hashlib
 import os
+import uuid
 import sqlite3
 import subprocess
 import tempfile
@@ -13,7 +14,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.0.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.1.0")
 
 # --- DATABASE SETUP ---
 DB_FILE = "videogen_saas.db"
@@ -29,7 +30,6 @@ def init_db():
             max_renders INTEGER DEFAULT 10
         )
     """)
-    # Your personal admin VIP key gets 500 starter credits
     cursor.execute("""
         INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders)
         VALUES ('LTD-VIP-2026', 'admin_vip', 0, 500)
@@ -38,6 +38,9 @@ def init_db():
     conn.close()
 
 init_db()
+
+# In-memory job tracker for background async rendering
+RENDER_JOBS = {}
 
 resend.api_key = os.environ.get("RESEND_API_KEY", "re_your_resend_api_key")
 
@@ -107,7 +110,7 @@ def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_fil
 def mix_audio_with_ffmpeg(video_url: str) -> str:
     try:
         ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-        response = requests.get(video_url, stream=True)
+        response = requests.get(video_url, stream=True, timeout=30)
         if response.status_code != 200:
             return video_url
             
@@ -128,70 +131,35 @@ def mix_audio_with_ffmpeg(video_url: str) -> str:
         
         if result.returncode == 0 and os.path.exists(out_path):
             os.unlink(in_path)
+            os.unlink(out_path)
             return video_url 
         
         return video_url
     except Exception:
         return video_url
 
-@app.post("/api/render")
-def secure_render(data: dict, user: dict = Depends(get_current_user)):
-    license_key = user.get("sub", "unknown_user")
-    user_fal_key = data.get("user_fal_key", "").strip()
-    using_byok = len(user_fal_key) > 10
-
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
-    row = cursor.fetchone()
-    
-    if not row:
-        conn.close()
-        raise HTTPException(status_code=403, detail="License not found in database.")
-    
-    current_usage, max_renders = row
-
-    # Only enforce starter credit cap if user has NOT supplied their own API key
-    if not using_byok and current_usage >= max_renders:
-        conn.close()
-        raise HTTPException(
-            status_code=429, 
-            detail=f"Free starter credits used ({current_usage}/{max_renders}). Enter your own Fal.ai API key above for unlimited lifetime rendering!"
-        )
-
-    active_api_key = user_fal_key if using_byok else os.environ.get("FAL_KEY", "")
-    if not active_api_key:
-        conn.close()
-        raise HTTPException(status_code=500, detail="No API key available. Please enter your Fal.ai API key in the studio settings.")
-
-    scenes = data.get("scenes", [])
-    video_format = data.get("video_format", "long_form")
-    model_tier = data.get("model_tier", "economy")
-    duration = int(data.get("duration", 5))
-    avatar = data.get("avatar", "none")
-    voice_persona = data.get("voice_persona", "en-US-Standard-A")
-    music_track = data.get("music_track", "none")
-    enable_captions = data.get("enable_captions", True)
-
-    if not scenes or not isinstance(scenes, list):
-        single_prompt = data.get("prompt", "").strip()
-        if not single_prompt:
-            conn.close()
-            raise HTTPException(status_code=400, detail="Scene script or prompt is required")
-        scenes = [single_prompt]
-
+def process_render_job(job_id: str, license_key: str, active_api_key: str, using_byok: bool, current_usage: int, max_renders: int, data: dict):
     try:
+        scenes = data.get("scenes", [])
+        video_format = data.get("video_format", "long_form")
+        model_tier = data.get("model_tier", "economy")
+        duration = int(data.get("duration", 5))
+        avatar = data.get("avatar", "none")
+        enable_captions = data.get("enable_captions", True)
+
         client = fal_client.SyncClient(key=active_api_key)
         selected_endpoint = MODEL_ENDPOINTS.get(model_tier, MODEL_ENDPOINTS["economy"])
         aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
         rendered_clips = []
+        total_scenes = len(scenes[:10])
 
-        for scene_text in scenes[:10]:
+        for idx, scene_text in enumerate(scenes[:10]):
+            RENDER_JOBS[job_id]["progress"] = f"Generating Scene {idx + 1} of {total_scenes}..."
+            
             final_prompt = scene_text.strip()
             if avatar in AVATAR_PROMPTS:
                 final_prompt = AVATAR_PROMPTS[avatar] + final_prompt
 
-            # Build arguments tailored to the chosen model
             if model_tier == "economy":
                 args = {
                     "prompt": final_prompt,
@@ -212,6 +180,7 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
                 final_scene_url = mix_audio_with_ffmpeg(raw_video_url)
                 
                 if enable_captions:
+                    RENDER_JOBS[job_id]["progress"] = f"Burning Captions on Scene {idx + 1} of {total_scenes}..."
                     try:
                         caption_result = client.run(
                             "fal-ai/workflow-utilities/auto-subtitle",
@@ -234,31 +203,85 @@ def secure_render(data: dict, user: dict = Depends(get_current_user)):
                 rendered_clips.append(final_scene_url)
 
         if not rendered_clips:
-            conn.close()
-            raise HTTPException(status_code=500, detail="Failed to generate video clips.")
+            RENDER_JOBS[job_id]["status"] = "failed"
+            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video URLs. Verify your API key has active credits."
+            return
 
-        # Only deduct from house starter credits if user didn't use BYOK
         new_usage = current_usage if using_byok else (current_usage + len(rendered_clips))
         if not using_byok:
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
             cursor.execute("UPDATE licenses SET renders_used = ? WHERE license_key = ?", (new_usage, license_key))
             conn.commit()
-        conn.close()
+            conn.close()
 
-        return {
-            "status": "success",
-            "message": f"Successfully generated {len(rendered_clips)} clips!",
+        RENDER_JOBS[job_id]["status"] = "completed"
+        RENDER_JOBS[job_id]["result"] = {
             "videos_rendered": new_usage,
             "limit": max_renders,
             "byok_active": using_byok,
             "video_urls": rendered_clips,
-            "video_url": rendered_clips[0],
-            "active_voice": voice_persona,
-            "active_music": music_track
+            "video_url": rendered_clips[0]
         }
 
     except Exception as e:
-        conn.close()
-        raise HTTPException(status_code=500, detail=f"Multimedia rendering failed: {str(e)}")
+        RENDER_JOBS[job_id]["status"] = "failed"
+        RENDER_JOBS[job_id]["error"] = str(e)
+
+@app.post("/api/render")
+def start_render_job(data: dict, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
+    license_key = user.get("sub", "unknown_user")
+    user_fal_key = data.get("user_fal_key", "").strip()
+    using_byok = len(user_fal_key) > 10
+
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        raise HTTPException(status_code=403, detail="License not found in database.")
+    
+    current_usage, max_renders = row
+
+    if not using_byok and current_usage >= max_renders:
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Free starter credits used ({current_usage}/{max_renders}). Enter your own Fal.ai API key above for unlimited lifetime rendering!"
+        )
+
+    active_api_key = user_fal_key if using_byok else os.environ.get("FAL_KEY", "")
+    if not active_api_key:
+        raise HTTPException(status_code=500, detail="No API key available. Please enter your Fal.ai API key in the studio settings.")
+
+    scenes = data.get("scenes", [])
+    if not scenes or not isinstance(scenes, list):
+        single_prompt = data.get("prompt", "").strip()
+        if not single_prompt:
+            raise HTTPException(status_code=400, detail="Scene script or prompt is required")
+        data["scenes"] = [single_prompt]
+
+    job_id = str(uuid.uuid4())
+    RENDER_JOBS[job_id] = {
+        "status": "processing",
+        "progress": "Initializing AI Engine...",
+        "result": None,
+        "error": None
+    }
+
+    background_tasks.add_task(
+        process_render_job, job_id, license_key, active_api_key, using_byok, current_usage, max_renders, data
+    )
+
+    return {"status": "queued", "job_id": job_id}
+
+@app.get("/api/status/{job_id}")
+def get_job_status(job_id: str, user: dict = Depends(get_current_user)):
+    job = RENDER_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Render job not found")
+    return job
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
@@ -284,7 +307,6 @@ async def lemonsqueezy_webhook(request: Request):
         order_id = attributes.get("identifier")
         total_price = attributes.get("total_formatted")
         
-        # Give buyers 10 free starter renders, then BYOK for unlimited lifetime usage
         new_key = f"VIP-{order_id[:8].upper()}-2026"
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
