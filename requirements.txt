@@ -1,5 +1,8 @@
 fastapi
 uvicorn
-PyJWT
-requests
+jwt
+pyjwt
+resend
 fal-client
+imageio-ffmpeg
+requests
