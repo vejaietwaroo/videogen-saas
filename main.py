@@ -14,7 +14,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.2.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.3.0")
 
 # --- DATABASE SETUP ---
 DB_FILE = "videogen_saas.db"
@@ -141,8 +141,15 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
         for idx, scene_text in enumerate(scenes[:10]):
             RENDER_JOBS[job_id]["progress"] = f"Generating Scene {idx + 1} of {total_scenes}..."
             
-            # Clean script tags for pure visual prompt rendering
-            clean_prompt = scene_text.replace("[On-Screen Text]", "").replace("[Spoken Voiceover]", "").strip()
+            # Clean out prompt brackets and script markers
+            clean_prompt = scene_text
+            for prefix in ["[On-Screen Text]", "[Spoken Voiceover]", "Scene 1:", "Scene 2:", "Scene 3:", "Scene 4:", "Scene 5:"]:
+                clean_prompt = clean_prompt.replace(prefix, "")
+            clean_prompt = clean_prompt.strip()
+
+            if not clean_prompt:
+                continue
+
             if avatar in AVATAR_PROMPTS:
                 clean_prompt = AVATAR_PROMPTS[avatar] + clean_prompt
 
@@ -182,7 +189,7 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
 
         if not rendered_clips:
             RENDER_JOBS[job_id]["status"] = "failed"
-            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Check your API key balance."
+            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Check your API key balance or prompt formatting."
             return
 
         new_usage = current_usage if using_byok else (current_usage + len(rendered_clips))
@@ -250,37 +257,3 @@ def get_job_status(job_id: str, user: dict = Depends(get_current_user)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
-
-@app.post("/api/webhook/lemonsqueezy")
-async def lemonsqueezy_webhook(request: Request):
-    body_bytes = await request.body()
-    signature = request.headers.get("X-Signature", "")
-    computed_sig = hmac.new(LEMON_SQUEEZY_SIGNING_SECRET.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
-    
-    if not hmac.compare_digest(computed_sig, signature):
-        raise HTTPException(status_code=403, detail="Invalid signature")
-        
-    event = await request.json()
-    if event.get("meta", {}).get("event_name") == "order_created":
-        attrs = event.get("data", {}).get("attributes", {})
-        email = attrs.get("user_email")
-        order_id = attrs.get("identifier")
-        new_key = f"VIP-{order_id[:8].upper()}-2026"
-        
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders) VALUES (?, 'lifetime_byok', 0, 10)", (new_key,))
-        conn.commit()
-        conn.close()
-        
-        try:
-            resend.Emails.send({
-                "from": "VideoGen Studio <onboarding@resend.dev>",
-                "to": [email],
-                "subject": "Your License Key",
-                "html": f"Your key is: <b>{new_key}</b>"
-            })
-        except Exception:
-            pass
-            
-    return {"status": "received"}
