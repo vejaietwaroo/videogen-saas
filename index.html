@@ -21,8 +21,8 @@
 
         <!-- License Activation Box -->
         <div id="license-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-lg">
-            <h2 class="text-lg font-semibold mb-2">Activate VIP License</h2>
-            <p class="text-sm text-slate-400 mb-4">Enter your VIP lifetime license key to unlock multimedia production.</p>
+            <h2 class="text-lg font-semibold mb-2">Activate Lifetime License</h2>
+            <p class="text-sm text-slate-400 mb-4">Enter your license key to unlock the production studio.</p>
             <div class="flex gap-3">
                 <input type="text" id="license-key-input" placeholder="e.g., LTD-VIP-2026" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
                 <button onclick="activateLicense()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors cursor-pointer">Activate</button>
@@ -32,10 +32,26 @@
 
         <!-- Studio Generator Workspace -->
         <div id="studio-workspace" class="space-y-6 opacity-40 pointer-events-none transition-opacity duration-300">
+            
+            <!-- BYOK API Key Settings Bar -->
+            <div class="bg-slate-900/90 border border-indigo-900/60 rounded-xl p-5 shadow-md">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-indigo-300">API Engine Key (BYOK — Unlimited Renders)</h3>
+                        <p class="text-xs text-slate-400">Paste your own Fal.ai API key for unlimited lifetime generation, or use your complimentary starter credits.</p>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <input type="password" id="byok-key-input" placeholder="fal_key_..." onchange="saveByokKey()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs w-full md:w-64 focus:outline-none focus:border-indigo-500">
+                        <button onclick="saveByokKey()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer">Save</button>
+                    </div>
+                </div>
+                <p id="byok-status" class="text-xs text-emerald-400 mt-2 hidden">Custom Fal.ai Key Active — Unlimited Rendering Enabled!</p>
+            </div>
+
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold">Script, Voice & Music Studio</h2>
-                    <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Usage: 0 / 100</span>
+                    <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Starter Credits: 0 / 10</span>
                 </div>
 
                 <!-- Script Input -->
@@ -45,6 +61,15 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Engine Tier -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Render Engine Tier</label>
+                        <select id="model-tier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="economy" selected>Economy (Wan 2.7 — Low Cost / Fast)</option>
+                            <option value="flagship">Flagship (Flux 3 Max — Ultra Cinema)</option>
+                        </select>
+                    </div>
+
                     <!-- Format -->
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1.5">Format</label>
@@ -54,6 +79,18 @@
                         </select>
                     </div>
 
+                    <!-- Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Clip Duration per Scene</label>
+                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="5" selected>5 Seconds (Recommended)</option>
+                            <option value="10">10 Seconds</option>
+                            <option value="15">15 Seconds</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <!-- Voiceover Persona -->
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1.5">AI Voiceover Persona</label>
@@ -75,9 +112,7 @@
                             <option value="suspense_drone">Dark Suspense Drone (Thriller)</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <!-- Avatar Preset -->
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Avatar Style</label>
@@ -87,16 +122,6 @@
                             <option value="female_presenter">Female Presenter</option>
                             <option value="male_presenter">Male Presenter</option>
                             <option value="noir_detective">Thriller / Noir Character</option>
-                        </select>
-                    </div>
-
-                    <!-- Duration -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Clip Duration per Scene</label>
-                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="5">5 Seconds</option>
-                            <option value="10" selected>10 Seconds</option>
-                            <option value="15">15 Seconds</option>
                         </select>
                     </div>
                 </div>
@@ -116,18 +141,38 @@
             <!-- Output / Results Section -->
             <div id="output-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 hidden">
                 <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Rendered Multimedia Production</h3>
-                <div id="result-container" class="flex flex-col items-center justify-center space-y-4">
-                    <!-- Video player and playlists injected here -->
-                </div>
+                <div id="result-container" class="flex flex-col items-center justify-center space-y-4"></div>
             </div>
         </div>
     </div>
 
     <script>
         let authToken = localStorage.getItem("videogen_token") || "";
+        let savedByok = localStorage.getItem("videogen_byok_key") || "";
 
         if (authToken) {
             lockUI(true);
+        }
+        if (savedByok) {
+            document.getElementById("byok-key-input").value = savedByok;
+            document.getElementById("byok-status").classList.remove("hidden");
+            document.getElementById("usage-badge").textContent = "BYOK Mode: Unlimited";
+        }
+
+        function saveByokKey() {
+            const key = document.getElementById("byok-key-input").value.trim();
+            localStorage.setItem("videogen_byok_key", key);
+            savedByok = key;
+            const statusEl = document.getElementById("byok-status");
+            const badgeEl = document.getElementById("usage-badge");
+            
+            if (key.length > 10) {
+                statusEl.classList.remove("hidden");
+                badgeEl.textContent = "BYOK Mode: Unlimited";
+            } else {
+                statusEl.classList.add("hidden");
+                badgeEl.textContent = "Starter Credits Active";
+            }
         }
 
         async function activateLicense() {
@@ -151,6 +196,9 @@
                 if (res.ok && data.access_token) {
                     authToken = data.access_token;
                     localStorage.setItem("videogen_token", authToken);
+                    if (!savedByok) {
+                        document.getElementById("usage-badge").textContent = `Starter Credits: ${data.renders_used} / ${data.max_renders}`;
+                    }
                     lockUI(true);
                     msgEl.classList.add("hidden");
                 } else {
@@ -169,7 +217,7 @@
             const licenseSec = document.getElementById("license-section");
 
             if (active) {
-                statusEl.textContent = "VIP License Active";
+                statusEl.textContent = "Lifetime License Active";
                 statusEl.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800";
                 workspace.style.opacity = "1";
                 workspace.style.pointerEvents = "auto";
@@ -179,12 +227,14 @@
 
         async function generateVideo() {
             const rawText = document.getElementById("prompt-input").value.trim();
+            const model_tier = document.getElementById("model-tier").value;
             const video_format = document.getElementById("video-format").value;
             const voice_persona = document.getElementById("voice-persona").value;
             const music_track = document.getElementById("music-track").value;
             const duration = document.getElementById("video-duration").value;
             const avatar = document.getElementById("avatar-select").value;
             const enable_captions = document.getElementById("enable-captions").checked;
+            const user_fal_key = document.getElementById("byok-key-input").value.trim();
             
             const btn = document.getElementById("generate-btn");
             const outputSec = document.getElementById("output-section");
@@ -198,10 +248,10 @@
             const scenes = rawText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Synthesizing Voiceover, Music & Video Scenes...`;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Rendering Multimedia Scenes...`;
             
             outputSec.classList.remove("hidden");
-            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Producing immersive multimedia assets...</p></div>`;
+            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-sm">Synthesizing visuals and subtitles...</p></div>`;
 
             try {
                 const res = await fetch("/api/render", {
@@ -210,17 +260,21 @@
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ scenes, video_format, voice_persona, music_track, duration, avatar, enable_captions })
+                    body: JSON.stringify({ scenes, model_tier, video_format, voice_persona, music_track, duration, avatar, enable_captions, user_fal_key })
                 });
 
                 const data = await res.json();
 
                 if (res.ok && data.video_urls) {
-                    document.getElementById("usage-badge").textContent = `Usage: ${data.videos_rendered} / ${data.limit}`;
+                    if (data.byok_active) {
+                        document.getElementById("usage-badge").textContent = "BYOK Mode: Unlimited";
+                    } else {
+                        document.getElementById("usage-badge").textContent = `Starter Credits: ${data.videos_rendered} / ${data.limit}`;
+                    }
                     
                     let clipsHTML = `<div class="w-full mb-4"><p class="text-xs text-indigo-400 mb-2 font-semibold">Primary Production Preview:</p><video controls autoplay loop class="w-full rounded-lg shadow-xl max-h-[450px] object-cover"><source src="${data.video_url}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
                     
-                    clipsHTML += `<div class="w-full mt-4 border-t border-slate-800 pt-4"><p class="text-xs text-slate-400 mb-3 font-semibold">All Rendered Clips (${data.video_urls.length} scenes with Voice: ${data.active_voice} & Music: ${data.active_music}):</p><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+                    clipsHTML += `<div class="w-full mt-4 border-t border-slate-800 pt-4"><p class="text-xs text-slate-400 mb-3 font-semibold">All Rendered Clips (${data.video_urls.length} scenes):</p><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
                     
                     data.video_urls.forEach((url, idx) => {
                         clipsHTML += `<div class="bg-slate-950 p-2 rounded border border-slate-800 flex flex-col items-center"><span class="text-xs text-slate-400 mb-1">Scene ${idx + 1}</span><a href="${url}" target="_blank" class="text-xs text-indigo-400 hover:underline truncate w-full text-center">Download Clip</a></div>`;
