@@ -3,318 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen SaaS Studio - Multimedia Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>VideoGen Studio Pro+ | AI Video & Multimedia Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
-    <div class="max-w-4xl mx-auto px-4 py-10">
+    <div class="max-w-5xl mx-auto px-4 py-8">
         <!-- Header -->
-        <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+        <header class="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">VideoGen Studio Pro+</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    🎬 VideoGen Studio Pro+
+                </h1>
                 <p class="text-sm text-slate-400">AI Video, Voiceover, Music & Multi-Scene Production Suite</p>
             </div>
-            <div id="auth-status" class="text-xs px-3 py-1.5 rounded-full bg-red-950/80 text-red-300 border border-red-800">
-                License Inactive
+            <div class="bg-emerald-950/80 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs text-emerald-400 font-medium flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Lifetime License Active
             </div>
         </header>
 
-        <!-- License Activation Box -->
-        <div id="license-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-lg">
-            <h2 class="text-lg font-semibold mb-2">Activate Lifetime License</h2>
-            <p class="text-sm text-slate-400 mb-4">Enter your license key to unlock the production studio.</p>
+        <!-- BYOK Key Section -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-xl">
+            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-2">API Engine Key (BYOK — Unlimited Renders)</h2>
+            <p class="text-xs text-slate-400 mb-4">Paste your own Fal.ai API key for unlimited lifetime generation, or use your complimentary starter credits.</p>
             <div class="flex gap-3">
-                <input type="text" id="license-key-input" placeholder="e.g., LTD-VIP-2026" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                <button onclick="activateLicense()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors cursor-pointer">Activate</button>
+                <input type="password" id="userFalKey" placeholder="fal_key_..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                <button onclick="saveApiKey()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors">Save</button>
             </div>
-            <p id="license-msg" class="text-xs mt-2 text-red-400 hidden"></p>
-        </div>
+            <div id="byokStatus" class="text-xs mt-2 text-slate-400"></div>
+        </section>
 
-        <!-- Studio Generator Workspace -->
-        <div id="studio-workspace" class="space-y-6 opacity-40 pointer-events-none transition-opacity duration-300">
-            
-            <!-- BYOK API Key Settings Bar -->
-            <div class="bg-slate-900/90 border border-indigo-900/60 rounded-xl p-5 shadow-md">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-sm font-semibold text-indigo-300">API Engine Key (BYOK — Unlimited Renders)</h3>
-                        <p class="text-xs text-slate-400">Paste your own Fal.ai API key for unlimited lifetime generation, or use your complimentary starter credits.</p>
-                    </div>
-                    <div class="flex gap-2 w-full md:w-auto">
-                        <input type="password" id="byok-key-input" placeholder="Paste Fal.ai API Key..." onchange="saveByokKey()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs w-full md:w-64 focus:outline-none focus:border-indigo-500">
-                        <button onclick="saveByokKey()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer">Save</button>
-                    </div>
-                </div>
-                <p id="byok-status" class="text-xs text-emerald-400 mt-2 hidden">Custom Fal.ai Key Active — Unlimited Rendering Enabled!</p>
+        <!-- Studio Form -->
+        <main class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h2 class="text-lg font-semibold text-white">Script, Voice & Music Studio</h2>
+                <span id="modeBadge" class="text-xs bg-indigo-950 border border-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded font-medium">BYOK Mode: Standard</span>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Script, Voice & Music Studio</h2>
-                    <span id="usage-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300">Starter Credits: 0 / 10</span>
-                </div>
-
-                <!-- Script Input -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Multi-Scene Script (One scene/narration line per row)</label>
-                    <textarea id="prompt-input" rows="5" placeholder="Scene 1: An expansive aerial view over mystic mountains at sunrise...&#10;Scene 2: A close-up of a peaceful meditation guide instructing breathwork..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500 font-mono"></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <!-- Engine Tier -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Render Engine Tier</label>
-                        <select id="model-tier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="economy" selected>Economy (Wan 2.7 — Low Cost / Fast)</option>
-                            <option value="flagship">Flagship (Flux 3 Max — Ultra Cinema)</option>
-                        </select>
-                    </div>
-
-                    <!-- Format -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Format</label>
-                        <select id="video-format" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="long_form" selected>Long-Form (16:9 YouTube)</option>
-                            <option value="short_form">Short-Form (9:16 Vertical Reels)</option>
-                        </select>
-                    </div>
-
-                    <!-- Duration -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Clip Duration per Scene</label>
-                        <select id="video-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="5" selected>5 Seconds (Recommended)</option>
-                            <option value="10">10 Seconds</option>
-                            <option value="15">15 Seconds</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <!-- Voiceover Persona -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">AI Voiceover Persona</label>
-                        <select id="voice-persona" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="en-US-Standard-A">Deep Cinematic Narrator (Male)</option>
-                            <option value="en-US-Standard-B">Warm Wellness Guide (Female)</option>
-                            <option value="en-US-Standard-C">Energetic Presenter (Dynamic)</option>
-                            <option value="noir_gritty">Gritty Thriller / Suspense Voice</option>
-                        </select>
-                    </div>
-
-                    <!-- Background Music -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Background Sound Track</label>
-                        <select id="music-track" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="ambient_meditation">Ambient Zen Meditation (Calming)</option>
-                            <option value="epic_cinematic">Epic Cinematic Orchestral (Dramatic)</option>
-                            <option value="lofi_chill">Lofi Chill Beats (Productivity)</option>
-                            <option value="suspense_drone">Dark Suspense Drone (Thriller)</option>
-                        </select>
-                    </div>
-
-                    <!-- Avatar Preset -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Visual Avatar Style</label>
-                        <select id="avatar-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="none">None (Standard Cinematic Scene)</option>
-                            <option value="wellness_coach">Wellness Guide / Tai Chi Instructor</option>
-                            <option value="female_presenter">Female Presenter</option>
-                            <option value="male_presenter">Male Presenter</option>
-                            <option value="noir_detective">Thriller / Noir Character</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Auto-Captions Toggle -->
-                <div class="flex items-center gap-2 mb-6 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-                    <input type="checkbox" id="enable-captions" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer">
-                    <label for="enable-captions" class="text-sm text-slate-300 cursor-pointer">Burn-in Karaoke Style Subtitles</label>
-                </div>
-
-                <!-- Generate Button -->
-                <button id="generate-btn" onclick="generateVideo()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-lg text-sm shadow-md transition-all cursor-pointer flex justify-center items-center gap-2">
-                    <span>Generate Complete Multimedia Video Batch</span>
-                </button>
+            <!-- Multi-Scene Script -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1">Multi-Scene Script (One scene/narration line per row)</label>
+                <textarea id="scriptInput" rows="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="A woman shifting her weight from side to side while her arms drift smoothly through the air..."></textarea>
             </div>
 
-            <!-- Output / Results Section -->
-            <div id="output-section" class="bg-slate-900 border border-slate-800 rounded-xl p-6 hidden">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Rendered Multimedia Production</h3>
-                <div id="result-container" class="flex flex-col items-center justify-center space-y-4"></div>
+            <!-- Grid Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Render Engine Tier</label>
+                    <select id="modelTier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="economy">Economy (Wan 2.7 — Low Cost / Fast)</option>
+                        <option value="flagship">Flagship (Flux 3 Max — Ultra Cinema)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Format</label>
+                    <select id="videoFormat" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="long_form">Long-Form (16:9 YouTube)</option>
+                        <option value="short_form" selected>Short-Form (9:16 Vertical Reels)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Clip Duration per Scene</label>
+                    <select id="clipDuration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="5" selected>5 Seconds (Recommended)</option>
+                        <option value="10">10 Seconds</option>
+                        <option value="15">15 Seconds</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">AI Voiceover Persona</label>
+                    <select id="voicePersona" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="deep_narrator">Deep Cinematic Narrator (Male)</option>
+                        <option value="warm_guide" selected>Warm Wellness Guide (Female)</option>
+                        <option value="energetic">Energetic Presenter (Dynamic)</option>
+                        <option value="gritty">Gritty Thriller / Suspense Voice</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Background Sound Track</label>
+                    <select id="soundTrack" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="ambient" selected>Ambient Zen Meditation (Calming)</option>
+                        <option value="epic">Epic Cinematic Orchestral (Dramatic)</option>
+                        <option value="lofi">Lofi Chill Beats (Productivity)</option>
+                        <option value="dark">Dark Suspense Drone (Thriller)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Visual Avatar Style</label>
+                    <select id="avatarStyle" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="none">None (Standard Cinematic Scene)</option>
+                        <option value="wellness_coach" selected>Wellness Guide / Tai Chi Instructor</option>
+                        <option value="female_presenter">Female Presenter</option>
+                        <option value="male_presenter">Male Presenter</option>
+                        <option value="noir_detective">Thriller / Noir Character</option>
+                    </select>
+                </div>
             </div>
-        </div>
+
+            <!-- Checkbox -->
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="enableCaptions" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                <label for="enableCaptions" class="text-sm text-slate-300">Burn-in Karaoke Style Subtitles</label>
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="startRenderBatch()" id="renderBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200">
+                Generate Complete Multimedia Video Batch
+            </button>
+        </main>
+
+        <!-- Output Section -->
+        <section class="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Rendered Multimedia Production</h2>
+            <div id="outputContainer" class="text-sm text-slate-400">
+                Ready to generate. Configure your script and hit generate above.
+            </div>
+        </section>
     </div>
 
     <script>
-        let authToken = localStorage.getItem("videogen_token") || "";
-        let savedByok = localStorage.getItem("videogen_byok_key") || "";
+        let authToken = "";
 
-        if (authToken) {
-            lockUI(true);
-        }
-        if (savedByok) {
-            document.getElementById("byok-key-input").value = savedByok;
-            document.getElementById("byok-status").classList.remove("hidden");
-            document.getElementById("usage-badge").textContent = "BYOK Mode: Unlimited";
-        }
-
-        function saveByokKey() {
-            const key = document.getElementById("byok-key-input").value.trim();
-            localStorage.setItem("videogen_byok_key", key);
-            savedByok = key;
-            const statusEl = document.getElementById("byok-status");
-            const badgeEl = document.getElementById("usage-badge");
-            
-            if (key.length > 10) {
-                statusEl.classList.remove("hidden");
-                badgeEl.textContent = "BYOK Mode: Unlimited";
-            } else {
-                statusEl.classList.add("hidden");
-                badgeEl.textContent = "Starter Credits Active";
-            }
-        }
-
-        async function activateLicense() {
-            const licenseKey = document.getElementById("license-key-input").value.trim();
-            const msgEl = document.getElementById("license-msg");
-            
-            if (!licenseKey) {
-                msgEl.textContent = "Please enter a license key.";
-                msgEl.classList.remove("hidden");
-                return;
-            }
-
+        async function initSession() {
             try {
-                const res = await fetch("/api/verify-license", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ license_key: licenseKey })
+                const res = await fetch('/api/verify-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ license_key: 'LTD-VIP-2026' })
                 });
                 const data = await res.json();
-
-                if (res.ok && data.access_token) {
+                if (data.access_token) {
                     authToken = data.access_token;
-                    localStorage.setItem("videogen_token", authToken);
-                    if (!savedByok) {
-                        document.getElementById("usage-badge").textContent = `Starter Credits: ${data.renders_used} / ${data.max_renders}`;
-                    }
-                    lockUI(true);
-                    msgEl.classList.add("hidden");
-                } else {
-                    msgEl.textContent = data.detail || "Invalid license key.";
-                    msgEl.classList.remove("hidden");
                 }
             } catch (err) {
-                msgEl.textContent = "Connection error verifying license.";
-                msgEl.classList.remove("hidden");
+                console.error("Session init error:", err);
+            }
+        }
+        initSession();
+
+        function saveApiKey() {
+            const key = document.getElementById('userFalKey').value.trim();
+            const statusDiv = document.getElementById('byokStatus');
+            const badge = document.getElementById('modeBadge');
+            if (key.length > 10) {
+                statusDiv.className = "text-xs mt-2 text-emerald-400 font-medium";
+                statusDiv.innerText = "Custom Fal.ai Key Active — Unlimited Rendering Enabled!";
+                badge.innerText = "BYOK Mode: Unlimited";
+            } else {
+                statusDiv.className = "text-xs mt-2 text-amber-400 font-medium";
+                statusDiv.innerText = "Using Starter Credits mode.";
+                badge.innerText = "BYOK Mode: Standard";
             }
         }
 
-        function lockUI(active) {
-            const statusEl = document.getElementById("auth-status");
-            const workspace = document.getElementById("studio-workspace");
-            const licenseSec = document.getElementById("license-section");
+        async function startRenderBatch() {
+            const scriptText = document.getElementById('scriptInput').value.trim();
+            const outputDiv = document.getElementById('outputContainer');
+            const renderBtn = document.getElementById('renderBtn');
 
-            if (active) {
-                statusEl.textContent = "Lifetime License Active";
-                statusEl.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800";
-                workspace.style.opacity = "1";
-                workspace.style.pointerEvents = "auto";
-                licenseSec.style.display = "none";
-            }
-        }
-
-        async function generateVideo() {
-            const rawText = document.getElementById("prompt-input").value.trim();
-            const model_tier = document.getElementById("model-tier").value;
-            const video_format = document.getElementById("video-format").value;
-            const voice_persona = document.getElementById("voice-persona").value;
-            const music_track = document.getElementById("music-track").value;
-            const duration = document.getElementById("video-duration").value;
-            const avatar = document.getElementById("avatar-select").value;
-            const enable_captions = document.getElementById("enable-captions").checked;
-            const user_fal_key = document.getElementById("byok-key-input").value.trim();
-            
-            const btn = document.getElementById("generate-btn");
-            const outputSec = document.getElementById("output-section");
-            const resultContainer = document.getElementById("result-container");
-
-            if (!rawText) {
-                alert("Please enter your scene script.");
+            if (!scriptText) {
+                alert("Please enter at least one scene in the script box.");
                 return;
             }
 
-            const scenes = rawText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            const scenes = scriptText.split('\n').filter(s => s.trim().length > 0);
+            const userKey = document.getElementById('userFalKey').value.trim();
 
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Starting Background Production...`;
-            
-            outputSec.classList.remove("hidden");
-            resultContainer.innerHTML = `<div class="py-12 flex flex-col items-center text-slate-400 gap-3"><svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p id="progress-text" class="text-sm">Queueing render job on server...</p></div>`;
+            renderBtn.disabled = true;
+            renderBtn.innerText = "Queuing Render Job...";
+            outputDiv.innerHTML = `<div class="flex items-center gap-3 text-indigo-400"><span class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> Initializing background render queue...</div>`;
 
             try {
-                const res = await fetch("/api/render", {
-                    method: "POST",
+                const payload = {
+                    scenes: scenes,
+                    user_fal_key: userKey,
+                    model_tier: document.getElementById('modelTier').value,
+                    video_format: document.getElementById('videoFormat').value,
+                    duration: parseInt(document.getElementById('clipDuration').value),
+                    avatar: document.getElementById('avatarStyle').value,
+                    enable_captions: document.getElementById('enableCaptions').checked
+                };
+
+                const res = await fetch('/api/render', {
+                    method: 'POST',
                     headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${authToken}`
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ scenes, model_tier, video_format, voice_persona, music_track, duration, avatar, enable_captions, user_fal_key })
+                    body: JSON.stringify(payload)
                 });
 
-                const startData = await res.json();
-                if (!res.ok || !startData.job_id) {
-                    throw new Error(startData.detail || "Failed to queue render job.");
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (parseErr) {
+                    throw new Error("Server returned non-JSON response: " + rawText.substring(0, 150));
                 }
 
-                // Poll job status every 3 seconds (completely prevents Render 60s timeout!)
-                const jobId = startData.job_id;
-                const pollInterval = setInterval(async () => {
-                    try {
-                        const statusRes = await fetch(`/api/status/${jobId}`, {
-                            headers: { "Authorization": `Bearer ${authToken}` }
-                        });
-                        const job = await statusRes.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || "Failed to start render job.");
+                }
 
-                        if (job.status === "processing") {
-                            const progEl = document.getElementById("progress-text");
-                            if (progEl) progEl.textContent = job.progress || "Rendering video scenes...";
-                        } else if (job.status === "completed") {
-                            clearInterval(pollInterval);
-                            btn.disabled = false;
-                            btn.innerHTML = `<span>Generate Complete Multimedia Video Batch</span>`;
-                            
-                            const data = job.result;
-                            if (data.byok_active) {
-                                document.getElementById("usage-badge").textContent = "BYOK Mode: Unlimited";
-                            } else {
-                                document.getElementById("usage-badge").textContent = `Starter Credits: ${data.videos_rendered} / ${data.limit}`;
-                            }
-
-                            let clipsHTML = `<div class="w-full mb-4"><p class="text-xs text-indigo-400 mb-2 font-semibold">Primary Production Preview:</p><video controls autoplay loop class="w-full rounded-lg shadow-xl max-h-[450px] object-cover"><source src="${data.video_url}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
-                            clipsHTML += `<div class="w-full mt-4 border-t border-slate-800 pt-4"><p class="text-xs text-slate-400 mb-3 font-semibold">All Rendered Clips (${data.video_urls.length} scenes):</p><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
-                            data.video_urls.forEach((url, idx) => {
-                                clipsHTML += `<div class="bg-slate-950 p-2 rounded border border-slate-800 flex flex-col items-center"><span class="text-xs text-slate-400 mb-1">Scene ${idx + 1}</span><a href="${url}" target="_blank" class="text-xs text-indigo-400 hover:underline truncate w-full text-center">Download Clip</a></div>`;
-                            });
-                            clipsHTML += `</div></div>`;
-                            resultContainer.innerHTML = clipsHTML;
-                        } else if (job.status === "failed") {
-                            clearInterval(pollInterval);
-                            btn.disabled = false;
-                            btn.innerHTML = `<span>Generate Complete Multimedia Video Batch</span>`;
-                            resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Render Error: ${job.error}</p>`;
-                        }
-                    } catch (pollErr) {
-                        // Ignore transient poll network hiccups and keep checking
-                    }
-                }, 3000);
+                const jobId = data.job_id;
+                pollJobStatus(jobId);
 
             } catch (err) {
-                btn.disabled = false;
-                btn.innerHTML = `<span>Generate Complete Multimedia Video Batch</span>`;
-                resultContainer.innerHTML = `<p class="text-red-400 text-sm py-6">Error: ${err.message}</p>`;
+                outputDiv.innerHTML = `<div class="text-rose-400 bg-rose-950/40 border border-rose-500/30 p-4 rounded-lg"><strong>Error:</strong> ${err.message}</div>`;
+                renderBtn.disabled = false;
+                renderBtn.innerText = "Generate Complete Multimedia Video Batch";
             }
+        }
+
+        async function pollJobStatus(jobId) {
+            const outputDiv = document.getElementById('outputContainer');
+            const renderBtn = document.getElementById('renderBtn');
+
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/status/${jobId}`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    const rawText = await res.text();
+                    let jobData;
+                    try {
+                        jobData = JSON.parse(rawText);
+                    } catch (e) {
+                        return; // wait for next poll
+                    }
+
+                    if (jobData.status === 'processing') {
+                        outputDiv.innerHTML = `<div class="flex items-center gap-3 text-indigo-400"><span class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> ${jobData.progress || 'Processing scenes...'}</div>`;
+                    } else if (jobData.status === 'completed') {
+                        clearInterval(interval);
+                        renderBtn.disabled = false;
+                        renderBtn.innerText = "Generate Complete Multimedia Video Batch";
+
+                        const urls = jobData.result.video_urls || [jobData.result.video_url];
+                        let html = `<div class="space-y-4"><p class="text-emerald-400 font-medium">Batch Render Completed Successfully!</p><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                        urls.forEach((url, idx) => {
+                            html += `<div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><p class="text-xs text-slate-400 mb-2">Scene ${idx + 1}</p><video controls class="w-full rounded bg-black aspect-video"><source src="${url}" type="video/mp4"></video><a href="${url}" target="_blank" class="inline-block mt-2 text-xs text-indigo-400 hover:underline">Download Clip</a></div>`;
+                        });
+                        html += `</div></div>`;
+                        outputDiv.innerHTML = html;
+                    } else if (jobData.status === 'failed') {
+                        clearInterval(interval);
+                        renderBtn.disabled = false;
+                        renderBtn.innerText = "Generate Complete Multimedia Video Batch";
+                        outputDiv.innerHTML = `<div class="text-rose-400 bg-rose-950/40 border border-rose-500/30 p-4 rounded-lg"><strong>Render Failed:</strong> ${jobData.error}</div>`;
+                    }
+                } catch (e) {
+                    console.error("Polling error:", e);
+                }
+            }, 3000);
         }
     </script>
 </body>
