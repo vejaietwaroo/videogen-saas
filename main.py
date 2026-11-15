@@ -12,7 +12,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.7.2")
+app = FastAPI(title="VideoGen SaaS API", version="5.7.3")
 
 DB_FILE = "videogen_saas.db"
 
