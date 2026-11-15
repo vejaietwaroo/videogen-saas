@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Security, Depends, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 import hmac
@@ -14,7 +14,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.1.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.2.0")
 
 # --- DATABASE SETUP ---
 DB_FILE = "videogen_saas.db"
@@ -39,9 +39,7 @@ def init_db():
 
 init_db()
 
-# In-memory job tracker for background async rendering
 RENDER_JOBS = {}
-
 resend.api_key = os.environ.get("RESEND_API_KEY", "re_your_resend_api_key")
 
 @app.get("/", response_class=HTMLResponse)
@@ -59,7 +57,6 @@ LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "y
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
     license_key = payload.get("license_key", "").strip()
-    
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT tier, renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
@@ -69,12 +66,7 @@ def verify_license(payload: dict):
     if row:
         tier, used, max_r = row
         token = jwt.encode({"sub": license_key, "tier": tier}, SECRET_KEY, algorithm="HS256")
-        return {
-            "status": "success", 
-            "access_token": token,
-            "renders_used": used,
-            "max_renders": max_r
-        }
+        return {"status": "success", "access_token": token, "renders_used": used, "max_renders": max_r}
     
     raise HTTPException(status_code=403, detail="Invalid license key")
 
@@ -120,20 +112,13 @@ def mix_audio_with_ffmpeg(video_url: str) -> str:
             in_path = tmp_in.name
 
         out_path = in_path.replace(".mp4", "_mixed.mp4")
-
-        cmd = [
-            ffmpeg_exe, "-y", "-i", in_path,
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-            out_path
-        ]
-        
+        cmd = [ffmpeg_exe, "-y", "-i", in_path, "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", out_path]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         if result.returncode == 0 and os.path.exists(out_path):
             os.unlink(in_path)
             os.unlink(out_path)
             return video_url 
-        
         return video_url
     except Exception:
         return video_url
@@ -156,22 +141,15 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
         for idx, scene_text in enumerate(scenes[:10]):
             RENDER_JOBS[job_id]["progress"] = f"Generating Scene {idx + 1} of {total_scenes}..."
             
-            final_prompt = scene_text.strip()
+            # Clean script tags for pure visual prompt rendering
+            clean_prompt = scene_text.replace("[On-Screen Text]", "").replace("[Spoken Voiceover]", "").strip()
             if avatar in AVATAR_PROMPTS:
-                final_prompt = AVATAR_PROMPTS[avatar] + final_prompt
+                clean_prompt = AVATAR_PROMPTS[avatar] + clean_prompt
 
             if model_tier == "economy":
-                args = {
-                    "prompt": final_prompt,
-                    "aspect_ratio": aspect_ratio,
-                    "resolution": "720p"
-                }
+                args = {"prompt": clean_prompt, "aspect_ratio": aspect_ratio, "resolution": "720p"}
             else:
-                args = {
-                    "prompt": final_prompt,
-                    "aspect_ratio": aspect_ratio,
-                    "duration": duration
-                }
+                args = {"prompt": clean_prompt, "aspect_ratio": aspect_ratio, "duration": duration}
 
             video_result = client.run(selected_endpoint, arguments=args)
             raw_video_url = extract_media_url(video_result, ("video", "output"))
@@ -180,7 +158,7 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
                 final_scene_url = mix_audio_with_ffmpeg(raw_video_url)
                 
                 if enable_captions:
-                    RENDER_JOBS[job_id]["progress"] = f"Burning Captions on Scene {idx + 1} of {total_scenes}..."
+                    RENDER_JOBS[job_id]["progress"] = f"Burning Subtitles on Scene {idx + 1} of {total_scenes}..."
                     try:
                         caption_result = client.run(
                             "fal-ai/workflow-utilities/auto-subtitle",
@@ -204,7 +182,7 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
 
         if not rendered_clips:
             RENDER_JOBS[job_id]["status"] = "failed"
-            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video URLs. Verify your API key has active credits."
+            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Check your API key balance."
             return
 
         new_usage = current_usage if using_byok else (current_usage + len(rendered_clips))
@@ -241,97 +219,68 @@ def start_render_job(data: dict, background_tasks: BackgroundTasks, user: dict =
     conn.close()
     
     if not row:
-        raise HTTPException(status_code=403, detail="License not found in database.")
+        raise HTTPException(status_code=403, detail="License not found.")
     
     current_usage, max_renders = row
-
     if not using_byok and current_usage >= max_renders:
-        raise HTTPException(
-            status_code=429, 
-            detail=f"Free starter credits used ({current_usage}/{max_renders}). Enter your own Fal.ai API key above for unlimited lifetime rendering!"
-        )
+        raise HTTPException(status_code=429, detail="Starter credits used. Please enter your Fal.ai API key above.")
 
     active_api_key = user_fal_key if using_byok else os.environ.get("FAL_KEY", "")
     if not active_api_key:
-        raise HTTPException(status_code=500, detail="No API key available. Please enter your Fal.ai API key in the studio settings.")
+        raise HTTPException(status_code=500, detail="No active API key provided.")
 
     scenes = data.get("scenes", [])
     if not scenes or not isinstance(scenes, list):
         single_prompt = data.get("prompt", "").strip()
         if not single_prompt:
-            raise HTTPException(status_code=400, detail="Scene script or prompt is required")
+            raise HTTPException(status_code=400, detail="Scene script is required.")
         data["scenes"] = [single_prompt]
 
     job_id = str(uuid.uuid4())
-    RENDER_JOBS[job_id] = {
-        "status": "processing",
-        "progress": "Initializing AI Engine...",
-        "result": None,
-        "error": None
-    }
+    RENDER_JOBS[job_id] = {"status": "processing", "progress": "Initializing...", "result": None, "error": None}
 
     background_tasks.add_task(
         process_render_job, job_id, license_key, active_api_key, using_byok, current_usage, max_renders, data
     )
-
     return {"status": "queued", "job_id": job_id}
 
 @app.get("/api/status/{job_id}")
 def get_job_status(job_id: str, user: dict = Depends(get_current_user)):
     job = RENDER_JOBS.get(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail="Render job not found")
+        raise HTTPException(status_code=404, detail="Job not found")
     return job
 
 @app.post("/api/webhook/lemonsqueezy")
 async def lemonsqueezy_webhook(request: Request):
     body_bytes = await request.body()
     signature = request.headers.get("X-Signature", "")
-    
-    computed_sig = hmac.new(
-        LEMON_SQUEEZY_SIGNING_SECRET.encode("utf-8"),
-        body_bytes,
-        hashlib.sha256
-    ).hexdigest()
+    computed_sig = hmac.new(LEMON_SQUEEZY_SIGNING_SECRET.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
     
     if not hmac.compare_digest(computed_sig, signature):
-        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+        raise HTTPException(status_code=403, detail="Invalid signature")
         
     event = await request.json()
-    event_name = event.get("meta", {}).get("event_name")
-    
-    if event_name == "order_created":
-        data = event.get("data", {})
-        attributes = data.get("attributes", {})
-        customer_email = attributes.get("user_email")
-        order_id = attributes.get("identifier")
-        total_price = attributes.get("total_formatted")
-        
+    if event.get("meta", {}).get("event_name") == "order_created":
+        attrs = event.get("data", {}).get("attributes", {})
+        email = attrs.get("user_email")
+        order_id = attrs.get("identifier")
         new_key = f"VIP-{order_id[:8].upper()}-2026"
+        
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders)
-            VALUES (?, 'lifetime_byok', 0, 10)
-        """, (new_key,))
+        cursor.execute("INSERT OR IGNORE INTO licenses (license_key, tier, renders_used, max_renders) VALUES (?, 'lifetime_byok', 0, 10)", (new_key,))
         conn.commit()
         conn.close()
         
         try:
             resend.Emails.send({
                 "from": "VideoGen Studio <onboarding@resend.dev>",
-                "to": [customer_email],
-                "subject": "Your VideoGen Studio Lifetime License Key",
-                "html": f"""
-                    <h2>Thank you for your purchase!</h2>
-                    <p>Your order ({order_id}) for {total_price} has been processed.</p>
-                    <p>Your Lifetime License Key is:</p>
-                    <h3 style="background:#f4f4f4; padding:10px; display:inline-block;">{new_key}</h3>
-                    <p>Includes <strong>10 complimentary starter video renders</strong>! After that, simply plug in your own Fal.ai API key inside the studio for unlimited lifetime video generation.</p>
-                    <p>Launch your studio here: <a href="https://videogen-saas.onrender.com">https://videogen-saas.onrender.com</a></p>
-                """
+                "to": [email],
+                "subject": "Your License Key",
+                "html": f"Your key is: <b>{new_key}</b>"
             })
-        except Exception as email_err:
-            print(f"[Email Error] Failed to send email to {customer_email}: {str(email_err)}")
-        
-    return {"status": "received", "event": event_name}
+        except Exception:
+            pass
+            
+    return {"status": "received"}
