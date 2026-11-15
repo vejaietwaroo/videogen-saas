@@ -7,16 +7,13 @@ import hashlib
 import os
 import uuid
 import sqlite3
-import subprocess
-import tempfile
 import requests
 import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.3.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.5.0")
 
-# --- DATABASE SETUP ---
 DB_FILE = "videogen_saas.db"
 
 def init_db():
@@ -52,7 +49,6 @@ def serve_frontend():
 
 security = HTTPBearer()
 SECRET_KEY = "your-secure-production-jwt-secret-key"
-LEMON_SQUEEZY_SIGNING_SECRET = os.environ.get("LEMON_SQUEEZY_SIGNING_SECRET", "your-lemon-squeezy-webhook-secret")
 
 @app.post("/api/verify-license")
 def verify_license(payload: dict):
@@ -89,7 +85,7 @@ MODEL_ENDPOINTS = {
     "flagship": "blackforestlabs/flux-3-max/text-to-video"
 }
 
-def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_file")):
+def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_file", "file")):
     for key in keys:
         if key in result:
             val = result[key]
@@ -98,30 +94,6 @@ def extract_media_url(result: dict, keys=("video", "audio", "output", "audio_fil
             if isinstance(val, str) and val.startswith("http"):
                 return val
     return None
-
-def mix_audio_with_ffmpeg(video_url: str) -> str:
-    try:
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-        response = requests.get(video_url, stream=True, timeout=30)
-        if response.status_code != 200:
-            return video_url
-            
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_in:
-            for chunk in response.iter_content(chunk_size=8192):
-                tmp_in.write(chunk)
-            in_path = tmp_in.name
-
-        out_path = in_path.replace(".mp4", "_mixed.mp4")
-        cmd = [ffmpeg_exe, "-y", "-i", in_path, "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", out_path]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        if result.returncode == 0 and os.path.exists(out_path):
-            os.unlink(in_path)
-            os.unlink(out_path)
-            return video_url 
-        return video_url
-    except Exception:
-        return video_url
 
 def process_render_job(job_id: str, license_key: str, active_api_key: str, using_byok: bool, current_usage: int, max_renders: int, data: dict):
     try:
@@ -141,12 +113,7 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
         for idx, scene_text in enumerate(scenes[:10]):
             RENDER_JOBS[job_id]["progress"] = f"Generating Scene {idx + 1} of {total_scenes}..."
             
-            # Clean out prompt brackets and script markers
-            clean_prompt = scene_text
-            for prefix in ["[On-Screen Text]", "[Spoken Voiceover]", "Scene 1:", "Scene 2:", "Scene 3:", "Scene 4:", "Scene 5:"]:
-                clean_prompt = clean_prompt.replace(prefix, "")
-            clean_prompt = clean_prompt.strip()
-
+            clean_prompt = scene_text.replace('"', '').replace("'", "").strip()
             if not clean_prompt:
                 continue
 
@@ -162,34 +129,27 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
             raw_video_url = extract_media_url(video_result, ("video", "output"))
 
             if raw_video_url:
-                final_scene_url = mix_audio_with_ffmpeg(raw_video_url)
+                final_scene_url = raw_video_url
                 
+                # Optional captioning step wrapped safely so it never crashes a render
                 if enable_captions:
-                    RENDER_JOBS[job_id]["progress"] = f"Burning Subtitles on Scene {idx + 1} of {total_scenes}..."
+                    RENDER_JOBS[job_id]["progress"] = f"Processing Subtitles on Scene {idx + 1} of {total_scenes}..."
                     try:
                         caption_result = client.run(
                             "fal-ai/workflow-utilities/auto-subtitle",
-                            arguments={
-                                "video_url": final_scene_url,
-                                "language": "en",
-                                "font_name": "Montserrat",
-                                "font_size": 90,
-                                "font_weight": "bold",
-                                "highlight_color": "purple",
-                                "position": "bottom"
-                            }
+                            arguments={"video_url": final_scene_url, "language": "en"}
                         )
                         captioned_url = extract_media_url(caption_result, ("video", "output"))
                         if captioned_url:
                             final_scene_url = captioned_url
                     except Exception:
-                        pass
+                        pass # Silently fallback to raw video if subtitle service fails
 
                 rendered_clips.append(final_scene_url)
 
         if not rendered_clips:
             RENDER_JOBS[job_id]["status"] = "failed"
-            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Check your API key balance or prompt formatting."
+            RENDER_JOBS[job_id]["error"] = "Fal.ai returned no video clips. Verify your API key balance and prompt text."
             return
 
         new_usage = current_usage if using_byok else (current_usage + len(rendered_clips))
@@ -215,45 +175,48 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
 
 @app.post("/api/render")
 def start_render_job(data: dict, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
-    license_key = user.get("sub", "unknown_user")
-    user_fal_key = data.get("user_fal_key", "").strip()
-    using_byok = len(user_fal_key) > 10
+    try:
+        license_key = user.get("sub", "unknown_user")
+        user_fal_key = data.get("user_fal_key", "").strip()
+        using_byok = len(user_fal_key) > 10
 
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if not row:
-        raise HTTPException(status_code=403, detail="License not found.")
-    
-    current_usage, max_renders = row
-    if not using_byok and current_usage >= max_renders:
-        raise HTTPException(status_code=429, detail="Starter credits used. Please enter your Fal.ai API key above.")
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT renders_used, max_renders FROM licenses WHERE license_key = ?", (license_key,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return JSONResponse(status_code=403, content={"detail": "License not found."})
+        
+        current_usage, max_renders = row
+        if not using_byok and current_usage >= max_renders:
+            return JSONResponse(status_code=429, content={"detail": "Starter credits used. Please enter your Fal.ai API key above."})
 
-    active_api_key = user_fal_key if using_byok else os.environ.get("FAL_KEY", "")
-    if not active_api_key:
-        raise HTTPException(status_code=500, detail="No active API key provided.")
+        active_api_key = user_fal_key if using_byok else os.environ.get("FAL_KEY", "")
+        if not active_api_key:
+            return JSONResponse(status_code=500, content={"detail": "No active API key provided."})
 
-    scenes = data.get("scenes", [])
-    if not scenes or not isinstance(scenes, list):
-        single_prompt = data.get("prompt", "").strip()
-        if not single_prompt:
-            raise HTTPException(status_code=400, detail="Scene script is required.")
-        data["scenes"] = [single_prompt]
+        scenes = data.get("scenes", [])
+        if not scenes or not isinstance(scenes, list):
+            single_prompt = data.get("prompt", "").strip()
+            if not single_prompt:
+                return JSONResponse(status_code=400, content={"detail": "Scene script is required."})
+            data["scenes"] = [single_prompt]
 
-    job_id = str(uuid.uuid4())
-    RENDER_JOBS[job_id] = {"status": "processing", "progress": "Initializing...", "result": None, "error": None}
+        job_id = str(uuid.uuid4())
+        RENDER_JOBS[job_id] = {"status": "processing", "progress": "Initializing...", "result": None, "error": None}
 
-    background_tasks.add_task(
-        process_render_job, job_id, license_key, active_api_key, using_byok, current_usage, max_renders, data
-    )
-    return {"status": "queued", "job_id": job_id}
+        background_tasks.add_task(
+            process_render_job, job_id, license_key, active_api_key, using_byok, current_usage, max_renders, data
+        )
+        return {"status": "queued", "job_id": job_id}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 @app.get("/api/status/{job_id}")
 def get_job_status(job_id: str, user: dict = Depends(get_current_user)):
     job = RENDER_JOBS.get(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        return JSONResponse(status_code=404, content={"detail": "Job not found"})
     return job
