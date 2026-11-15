@@ -12,7 +12,7 @@ import imageio_ffmpeg
 import resend
 import fal_client
 
-app = FastAPI(title="VideoGen SaaS API", version="5.6.0")
+app = FastAPI(title="VideoGen SaaS API", version="5.7.0")
 
 DB_FILE = "videogen_saas.db"
 
@@ -108,7 +108,6 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
         client = fal_client.SyncClient(key=active_api_key)
         selected_endpoint = MODEL_ENDPOINTS.get(model_tier, MODEL_ENDPOINTS["economy"])
         
-        # Wan 2.7 uses 'aspect_ratio' string directly
         aspect_ratio = "16:9" if video_format == "long_form" else "9:16"
         rendered_clips = []
         total_scenes = len(scenes[:10])
@@ -123,7 +122,6 @@ def process_render_job(job_id: str, license_key: str, active_api_key: str, using
             if avatar in AVATAR_PROMPTS:
                 clean_prompt = AVATAR_PROMPTS[avatar] + clean_prompt
 
-            # Clean payload specific to Wan 2.7 / Flux endpoints
             arguments = {
                 "prompt": clean_prompt,
                 "aspect_ratio": aspect_ratio
