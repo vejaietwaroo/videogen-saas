@@ -3,260 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen Studio Pro+ | AI Video & Multimedia Suite</title>
+    <title>VideoGen Studio Pro+ - AI Video Generation SaaS</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
-    <div class="max-w-5xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    🎬 VideoGen Studio Pro+
-                </h1>
-                <p class="text-sm text-slate-400">AI Video, Voiceover, Music & Multi-Scene Production Suite</p>
-            </div>
-            <div class="bg-emerald-950/80 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs text-emerald-400 font-medium flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Lifetime License Active
-            </div>
-        </header>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
 
-        <!-- BYOK Key Section -->
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-xl">
-            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-2">API Engine Key (BYOK — Unlimited Renders)</h2>
-            <p class="text-xs text-slate-400 mb-4">Paste your own Fal.ai API key for unlimited lifetime generation, or use your complimentary starter credits.</p>
-            <div class="flex gap-3">
-                <input type="password" id="userFalKey" placeholder="fal_key_..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                <button onclick="saveApiKey()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors">Save</button>
+    <!-- Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-xl font-bold tracking-wider text-blue-500">VideoGen</span>
+                <span class="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">PRO+</span>
             </div>
-            <div id="byokStatus" class="text-xs mt-2 text-slate-400"></div>
+            <nav class="hidden md:flex space-x-6 text-sm text-slate-300">
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#pricing" class="hover:text-white transition">Pricing</a>
+                <a href="#demo" class="hover:text-white transition">Live Demo</a>
+            </nav>
+            <div>
+                <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition">
+                    Get Access
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="flex-grow">
+        <section class="max-w-5xl mx-auto px-6 py-20 text-center">
+            <div class="inline-block mb-4 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-medium uppercase tracking-wider">
+                Powered by Advanced AI & Fal.ai
+            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+                Automate Multi-Scene Videos & Voiceovers <span class="text-blue-500">In Minutes</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+                A powerful, cloud-hosted AI SaaS platform built for creators, marketers, and agencies to scale video production effortlessly with commercial rights included.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- WarriorPlus Checkout Button Link -->
+                <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-xl transition transform hover:-translate-y-0.5 text-center">
+                    Get Instant Access — Today: $37
+                </a>
+                <span class="text-xs text-slate-500">30-Day Money-Back Guarantee • Lifetime License</span>
+            </div>
         </section>
 
-        <!-- Studio Form -->
-        <main class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-                <h2 class="text-lg font-semibold text-white">Script, Voice & Music Studio</h2>
-                <span id="modeBadge" class="text-xs bg-indigo-950 border border-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded font-medium">BYOK Mode: Standard</span>
+        <!-- Features Grid Section -->
+        <section id="features" class="max-w-7xl mx-auto px-6 py-16 border-t border-slate-900">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold">Everything You Need to Dominate Video Marketing</h2>
             </div>
-
-            <!-- Multi-Scene Script -->
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Multi-Scene Script (One scene/narration line per row)</label>
-                <textarea id="scriptInput" rows="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono" placeholder="A woman shifting her weight from side to side while her arms drift smoothly through the air..."></textarea>
-            </div>
-
-            <!-- Grid Controls -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Render Engine Tier</label>
-                    <select id="modelTier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="economy">Economy (Wan 2.7 — Low Cost / Fast)</option>
-                        <option value="flagship">Flagship (Flux 3 Max — Ultra Cinema)</option>
-                    </select>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
+                    <div class="text-blue-500 text-xl font-bold mb-3">⚡ AI Multi-Scene Render</div>
+                    <p class="text-slate-400 text-sm">Generate cohesive, multi-scene visual sequences automatically using state-of-the-art generative video models.</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Format</label>
-                    <select id="videoFormat" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="long_form">Long-Form (16:9 YouTube)</option>
-                        <option value="short_form" selected>Short-Form (9:16 Vertical Reels)</option>
-                    </select>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
+                    <div class="text-blue-500 text-xl font-bold mb-3">🎙️ Professional Voiceovers</div>
+                    <p class="text-slate-400 text-sm">Produce natural, ultra-realistic voice narration synchronized perfectly with your video scenes.</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Clip Duration per Scene</label>
-                    <select id="clipDuration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="5" selected>5 Seconds (Recommended)</option>
-                        <option value="10">10 Seconds</option>
-                        <option value="15">15 Seconds</option>
-                    </select>
+                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
+                    <div class="text-blue-500 text-xl font-bold mb-3">💼 Commercial Rights</div>
+                    <p class="text-slate-400 text-sm">Use generated videos for client projects, social media channels, and paid commercial marketing campaigns.</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">AI Voiceover Persona</label>
-                    <select id="voicePersona" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="deep_narrator">Deep Cinematic Narrator (Male)</option>
-                        <option value="warm_guide" selected>Warm Wellness Guide (Female)</option>
-                        <option value="energetic">Energetic Presenter (Dynamic)</option>
-                        <option value="gritty">Gritty Thriller / Suspense Voice</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Background Sound Track</label>
-                    <select id="soundTrack" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="ambient" selected>Ambient Zen Meditation (Calming)</option>
-                        <option value="epic">Epic Cinematic Orchestral (Dramatic)</option>
-                        <option value="lofi">Lofi Chill Beats (Productivity)</option>
-                        <option value="dark">Dark Suspense Drone (Thriller)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Visual Avatar Style</label>
-                    <select id="avatarStyle" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="none">None (Standard Cinematic Scene)</option>
-                        <option value="wellness_coach" selected>Wellness Guide / Tai Chi Instructor</option>
-                        <option value="female_presenter">Female Presenter</option>
-                        <option value="male_presenter">Male Presenter</option>
-                        <option value="noir_detective">Thriller / Noir Character</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Checkbox -->
-            <div class="flex items-center gap-2 pt-2">
-                <input type="checkbox" id="enableCaptions" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                <label for="enableCaptions" class="text-sm text-slate-300">Burn-in Karaoke Style Subtitles</label>
-            </div>
-
-            <!-- Submit Button -->
-            <button onclick="startRenderBatch()" id="renderBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200">
-                Generate Complete Multimedia Video Batch
-            </button>
-        </main>
-
-        <!-- Output Section -->
-        <section class="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Rendered Multimedia Production</h2>
-            <div id="outputContainer" class="text-sm text-slate-400">
-                Ready to generate. Configure your script and hit generate above.
             </div>
         </section>
-    </div>
+    </main>
 
-    <script>
-        let authToken = "";
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
+        <p>&copy; 2026 VideoGen Studio Pro+. All Rights Reserved. • <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="hover:underline text-slate-400">Secure Checkout</a></p>
+    </footer>
 
-        async function initSession() {
-            try {
-                const res = await fetch('/api/verify-license', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ license_key: 'LTD-VIP-2026' })
-                });
-                const data = await res.json();
-                if (data.access_token) {
-                    authToken = data.access_token;
-                }
-            } catch (err) {
-                console.error("Session init error:", err);
-            }
-        }
-        initSession();
-
-        function saveApiKey() {
-            const key = document.getElementById('userFalKey').value.trim();
-            const statusDiv = document.getElementById('byokStatus');
-            const badge = document.getElementById('modeBadge');
-            if (key.length > 10) {
-                statusDiv.className = "text-xs mt-2 text-emerald-400 font-medium";
-                statusDiv.innerText = "Custom Fal.ai Key Active — Unlimited Rendering Enabled!";
-                badge.innerText = "BYOK Mode: Unlimited";
-            } else {
-                statusDiv.className = "text-xs mt-2 text-amber-400 font-medium";
-                statusDiv.innerText = "Using Starter Credits mode.";
-                badge.innerText = "BYOK Mode: Standard";
-            }
-        }
-
-        async function startRenderBatch() {
-            const scriptText = document.getElementById('scriptInput').value.trim();
-            const outputDiv = document.getElementById('outputContainer');
-            const renderBtn = document.getElementById('renderBtn');
-
-            if (!scriptText) {
-                alert("Please enter at least one scene in the script box.");
-                return;
-            }
-
-            const scenes = scriptText.split('\n').filter(s => s.trim().length > 0);
-            const userKey = document.getElementById('userFalKey').value.trim();
-
-            renderBtn.disabled = true;
-            renderBtn.innerText = "Queuing Render Job...";
-            outputDiv.innerHTML = `<div class="flex items-center gap-3 text-indigo-400"><span class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> Initializing background render queue...</div>`;
-
-            try {
-                const payload = {
-                    scenes: scenes,
-                    user_fal_key: userKey,
-                    model_tier: document.getElementById('modelTier').value,
-                    video_format: document.getElementById('videoFormat').value,
-                    duration: parseInt(document.getElementById('clipDuration').value),
-                    avatar: document.getElementById('avatarStyle').value,
-                    enable_captions: document.getElementById('enableCaptions').checked
-                };
-
-                const res = await fetch('/api/render', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const rawText = await res.text();
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (parseErr) {
-                    throw new Error("Server returned non-JSON response: " + rawText.substring(0, 150));
-                }
-
-                if (!res.ok) {
-                    throw new Error(data.detail || "Failed to start render job.");
-                }
-
-                const jobId = data.job_id;
-                pollJobStatus(jobId);
-
-            } catch (err) {
-                outputDiv.innerHTML = `<div class="text-rose-400 bg-rose-950/40 border border-rose-500/30 p-4 rounded-lg"><strong>Error:</strong> ${err.message}</div>`;
-                renderBtn.disabled = false;
-                renderBtn.innerText = "Generate Complete Multimedia Video Batch";
-            }
-        }
-
-        async function pollJobStatus(jobId) {
-            const outputDiv = document.getElementById('outputContainer');
-            const renderBtn = document.getElementById('renderBtn');
-
-            const interval = setInterval(async () => {
-                try {
-                    const res = await fetch(`/api/status/${jobId}`, {
-                        headers: { 'Authorization': `Bearer ${authToken}` }
-                    });
-                    const rawText = await res.text();
-                    let jobData;
-                    try {
-                        jobData = JSON.parse(rawText);
-                    } catch (e) {
-                        return; // wait for next poll
-                    }
-
-                    if (jobData.status === 'processing') {
-                        outputDiv.innerHTML = `<div class="flex items-center gap-3 text-indigo-400"><span class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> ${jobData.progress || 'Processing scenes...'}</div>`;
-                    } else if (jobData.status === 'completed') {
-                        clearInterval(interval);
-                        renderBtn.disabled = false;
-                        renderBtn.innerText = "Generate Complete Multimedia Video Batch";
-
-                        const urls = jobData.result.video_urls || [jobData.result.video_url];
-                        let html = `<div class="space-y-4"><p class="text-emerald-400 font-medium">Batch Render Completed Successfully!</p><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-                        urls.forEach((url, idx) => {
-                            html += `<div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><p class="text-xs text-slate-400 mb-2">Scene ${idx + 1}</p><video controls class="w-full rounded bg-black aspect-video"><source src="${url}" type="video/mp4"></video><a href="${url}" target="_blank" class="inline-block mt-2 text-xs text-indigo-400 hover:underline">Download Clip</a></div>`;
-                        });
-                        html += `</div></div>`;
-                        outputDiv.innerHTML = html;
-                    } else if (jobData.status === 'failed') {
-                        clearInterval(interval);
-                        renderBtn.disabled = false;
-                        renderBtn.innerText = "Generate Complete Multimedia Video Batch";
-                        outputDiv.innerHTML = `<div class="text-rose-400 bg-rose-950/40 border border-rose-500/30 p-4 rounded-lg"><strong>Render Failed:</strong> ${jobData.error}</div>`;
-                    }
-                } catch (e) {
-                    console.error("Polling error:", e);
-                }
-            }, 3000);
-        }
-    </script>
+    <!-- Required WarriorPlus Sales Page Tracking Script -->
+    <script type="text/javascript" src="https://warriorplus.com/o2/js/n6qlhg" defer></script>
 </body>
 </html>
