@@ -1,80 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoGen Studio Pro+ - AI Video Generation SaaS</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VideoGen Studio Pro+ — Multi-Scene AI Video &amp; Voiceover Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+<body class="bg-[#090d16] text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <a href="#" class="flex items-center gap-2.5 text-xl font-bold tracking-tight">
+        <span class="text-blue-500">VideoGen</span>
+        <span class="rounded border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-300">
+          PRO+
+        </span>
+      </a>
 
-    <!-- Navigation Bar -->
-    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <span class="text-xl font-bold tracking-wider text-blue-500">VideoGen</span>
-                <span class="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">PRO+</span>
-            </div>
-            <nav class="hidden md:flex space-x-6 text-sm text-slate-300">
-                <a href="#features" class="hover:text-white transition">Features</a>
-                <a href="#pricing" class="hover:text-white transition">Pricing</a>
-                <a href="#demo" class="hover:text-white transition">Live Demo</a>
-            </nav>
-            <div>
-                <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition">
-                    Get Access
-                </a>
-            </div>
+      <nav class="hidden items-center gap-8 text-sm font-medium text-slate-300 md:flex">
+        <a href="#features" class="transition hover:text-white">Features</a>
+        <a href="#pricing" class="transition hover:text-white">Pricing</a>
+        <a href="#workspace" class="transition hover:text-white">Live Demo</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a
+          href="#workspace"
+          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:text-white"
+        >
+          Open Studio
+        </a>
+        <a
+      >
+         href="https://vejai.gumroad.com/l/videogen-studio-pro"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500"
+             Get Access
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="mx-auto max-w-5xl px-6 pb-20 pt-20 text-center">
+      <h1 class="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-white sm:text-6xl sm:leading-tight">
+        Automate Multi-Scene Videos &amp; Voiceovers
+        <span class="block text-blue-500">In Minutes</span>
+      </h1>
+
+      <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+        A powerful, cloud-hosted AI SaaS platform built for creators, marketers, and agencies to scale video production effortlessly with commercial rights included.
+      </p>
+
+      <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <a
+          href="https://vejai.gumroad.com/l/videogen-studio-pro"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500"
+        >
+          Get Instant Access — Today: $37
+        </a>
+        <span class="text-xs font-medium text-slate-400">
+          30-Day Money-Back Guarantee &bull; Lifetime License
+        </span>
+      </div>
+    </section>
+
+    <hr class="mx-auto max-w-6xl border-slate-800/80" />
+
+    <!-- Features Section -->
+    <section id="features" class="mx-auto max-w-6xl px-6 py-20">
+      <h2 class="text-center text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        Everything You Need to Dominate Video Marketing
+      </h2>
+      <p class="mx-auto mt-3 max-w-2xl text-center text-sm text-slate-400 sm:text-base">
+        Generate multi-scene visuals, natural voiceovers, and background tracks in one browser workflow.
+      </p>
+
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h3 class="text-lg font-semibold text-white">Multi-Scene AI Video</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">
+            Turn scripts and prompts into cohesive multi-scene video sequences directly in your browser without heavy local installs.
+          </p>
         </div>
-    </header>
 
-    <!-- Hero Section -->
-    <main class="flex-grow">
-        <section class="max-w-5xl mx-auto px-6 py-20 text-center">
-                        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-                Automate Multi-Scene Videos & Voiceovers <span class="text-blue-500">In Minutes</span>
-            </h1>
-            <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
-                A powerful, cloud-hosted AI SaaS platform built for creators, marketers, and agencies to scale video production effortlessly with commercial rights included.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <!-- WarriorPlus Checkout Button Link -->
-                <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-xl transition transform hover:-translate-y-0.5 text-center">
-                    Get Instant Access — Today: $37
-                </a>
-                <span class="text-xs text-slate-500">30-Day Money-Back Guarantee • Lifetime License</span>
-            </div>
-        </section>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h3 class="text-lg font-semibold text-white">Voiceovers &amp; Background Audio</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">
+            Pair every scene with synchronized narration and background audio tracks ready for social, YouTube, and client campaigns.
+          </p>
+        </div>
 
-        <!-- Features Grid Section -->
-        <section id="features" class="max-w-7xl mx-auto px-6 py-16 border-t border-slate-900">
-            <div class="text-center mb-12">
-                <h2 class="text-2xl md:text-3xl font-bold">Everything You Need to Dominate Video Marketing</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
-                    <div class="text-blue-500 text-xl font-bold mb-3">⚡ AI Multi-Scene Render</div>
-                    <p class="text-slate-400 text-sm">Generate cohesive, multi-scene visual sequences automatically using state-of-the-art generative video models.</p>
-                </div>
-                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
-                    <div class="text-blue-500 text-xl font-bold mb-3">🎙️ Professional Voiceovers</div>
-                    <p class="text-slate-400 text-sm">Produce natural, ultra-realistic voice narration synchronized perfectly with your video scenes.</p>
-                </div>
-                <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
-                    <div class="text-blue-500 text-xl font-bold mb-3">💼 Commercial Rights</div>
-                    <p class="text-slate-400 text-sm">Use generated videos for client projects, social media channels, and paid commercial marketing campaigns.</p>
-                </div>
-            </div>
-        </section>
-    </main>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h3 class="text-lg font-semibold text-white">Commercial Rights Included</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">
+            One-time $37 Standard Access license with full commercial rights for personal brands, agencies, and client work.
+          </p>
+        </div>
+      </div>
+    </section>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
-        <p>&copy; 2026 VideoGen Studio Pro+. All Rights Reserved. • <a href="https://www.warriorplus.com/o2/buy/kwwq8n/n6qlhg/v99jww" target="_blank" class="hover:underline text-slate-400">Secure Checkout</a></p>
-    </footer>
+    <!-- Studio Access / Workspace Entry -->
+    <section id="workspace" class="mx-auto max-w-5xl px-6 pb-20">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-8 text-center">
+        <span class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+          Member Workspace
+        </span>
+        <h2 class="mt-4 text-2xl font-bold text-white sm:text-3xl">
+          Already Purchased Standard Access?
+        </h2>
+        <p class="mx-auto mt-2 max-w-xl text-sm text-slate-300">
+          Launch your VideoGen Studio Pro+ browser workspace directly below, or pick up your one-time $37 license on Gumroad.
+        </p>
 
-    <!-- Required WarriorPlus Sales Page Tracking Script -->
-    <script type="text/javascript" src="https://warriorplus.com/o2/js/n6qlhg" defer></script>
+        <div class="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <!-- Update href="/studio" below if your FastAPI studio route uses a different path -->
+          <a
+            href="/studio"
+            class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-500"
+          >
+            Launch VideoGen Studio Workspace
+          </a>
+          <a
+            href="https://vejai.gumroad.com/l/videogen-studio-pro"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:text-white"
+          >
+            Buy Standard Access ($37)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="mx-auto max-w-4xl px-6 pb-24">
+      <div class="rounded-2xl border border-blue-500/40 bg-slate-900/90 p-8 text-center shadow-2xl">
+        <p class="text-xs font-semibold uppercase tracking-widest text-blue-400">Standard Access</p>
+        <h2 class="mt-2 text-3xl font-extrabold text-white">$37 One-Time</h2>
+        <p class="mt-2 text-sm text-slate-300">
+          Lifetime browser access &bull; No recurring subscription fees
+        </p>
+
+        <ul class="mx-auto mt-6 max-w-md space-y-2.5 text-left text-sm text-slate-300">
+          <li>&#10003; Instant browser access to create multi-scene AI videos</li>
+          <li>&#10003; Voiceover and background audio support</li>
+          <li>&#10003; Commercial rights included</li>
+          <li>&#10003; No heavy desktop installation required</li>
+        </ul>
+
+        <div class="mt-8">
+          <a
+            href="https://vejai.gumroad.com/l/videogen-studio-pro"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
+          >
+            Get Instant Access — Today: $37
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+    &copy; 2026 VideoGen Studio Pro+. All rights reserved.
+  </footer>
 </body>
 </html>
