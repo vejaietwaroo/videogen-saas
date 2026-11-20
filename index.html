@@ -9,8 +9,8 @@
 <body class="bg-[#090d16] text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
   <!-- Top Navigation -->
   <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-      <a href="#" class="flex items-center gap-2.5 text-xl font-bold tracking-tight">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+      <a href="#" class="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-tight whitespace-nowrap">
         <span class="text-blue-500">VideoGen</span>
         <span class="rounded border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-300">
           PRO+
@@ -18,25 +18,25 @@
       </a>
 
       <nav class="hidden items-center gap-8 text-sm font-medium text-slate-300 md:flex">
-        <a href="#features" class="transition hover:text-white">Features</a>
-        <a href="#pricing" class="transition hover:text-white">Pricing</a>
-        <a href="#workspace" class="transition hover:text-white">Live Demo</a>
+        <a href="#features" class="whitespace-nowrap transition hover:text-white">Features</a>
+        <a href="#pricing" class="whitespace-nowrap transition hover:text-white">Pricing</a>
+        <a href="#workspace" class="whitespace-nowrap transition hover:text-white">Live Demo</a>
       </nav>
 
-      <div class="flex items-center gap-3">
+      <div class="flex shrink-0 items-center gap-3">
         <a
           href="#workspace"
-          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:text-white"
+          class="whitespace-nowrap rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:text-white"
         >
           Open Studio
         </a>
         <a
-      >
-         href="https://vejai.gumroad.com/l/videogen-studio-pro"
+          href="https://vejai.gumroad.com/l/videogen-studio-pro"
           target="_blank"
           rel="noopener noreferrer"
-          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500"
-             Get Access
+          class="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500"
+        >
+          Get Access
         </a>
       </div>
     </div>
@@ -118,7 +118,6 @@
         </p>
 
         <div class="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <!-- Update href="/studio" below if your FastAPI studio route uses a different path -->
           <a
             href="/studio"
             class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-500"
